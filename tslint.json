@@ -1,0 +1,45 @@
+{
+  /*
+   * Possible values:
+   * - the name of a built-in config
+   * - the name of an NPM module which has a "main" file that exports a config object
+   * - a relative path to a JSON file
+   */
+  /*
+   * Built-in configs include `tslint:latest` and `tslint:recommended`.
+   *
+   * tslint:recommended is a stable, somewhat opinionated set of rules which we encourage for general TypeScript programming.
+   *   This configuration follows semver, so it will not have breaking changes across minor or patch releases.
+   * tslint:latest extends tslint:recommended and is continuously updated to include configuration for the latest rules
+   *   in every TSLint release. Using this config may introduce breaking changes across minor releases as new rules are
+   *   enabled which cause lint failures in your code. When TSLint reaches a major version bump, tslint:recommended will
+   *   be updated to be identical to tslint:latest.
+   */
+  "extends": "tslint:latest",
+  "rules": {
+    /*
+     * Any rules specified here will override those from the base config we are extending
+     */
+    /*  console nur mit .info(), .error(), .debug() */
+    "no-console": [true, "log"],
+    /* interface name ohne 'I' (ng2 style guide) */
+    "interface-name": [true, "never-prefix"],
+    /* alpha-sort fuer object properties ist wenig hilfreich */
+    "object-literal-sort-keys": false,
+    /* Zugriff via obj["name"] erlauben, ist zwar nicht sauber aber nicht vollstaendig zu vermeiden */
+    "no-string-literal": false,
+    /* die IDE rueckt auch Leerzeilen ein, das wuerde dauernd angemeckert */
+    "no-trailing-whitespace": false,
+    /* if innerhalb for(..in..) erforderlich (s. Doku) - zu aufwendig, also erstmal weglassen */
+    "forin": false,
+    /* sort explizit auf case-insensitive */
+    "ordered-imports": [true, {"import-sources-order": "case-insensitive", "named-imports-order": "case-insensitive"}]
+  },
+  "rulesDirectory": [
+    /*
+     * A list of relative or absolute paths to directories that contain custom rules.
+     * See the Custom Rules documentation below for more details.
+     */
+  ]
+
+}

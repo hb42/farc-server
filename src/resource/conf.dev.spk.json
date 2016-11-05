@@ -1,0 +1,5 @@
+{
+  "mongodbServer": "localhost",
+  "mongodbDB": "farc",
+  "mongodbPort": 27017
+}

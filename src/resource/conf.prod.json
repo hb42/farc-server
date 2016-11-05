@@ -1,0 +1,5 @@
+{
+  "mongodbServer": "nathan",
+  "mongodbDB": "farc",
+  "mongodbPort": 27017
+}
