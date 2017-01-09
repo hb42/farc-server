@@ -7,6 +7,7 @@
 
 import * as fs from "fs";
 // import * as fse from "fs-extra";
+import * as timers from "timers";
 
 import {
   farcPwd,
@@ -100,8 +101,10 @@ if (!metadata.SPK) {
 // mo.makeDrive(metadata.SPK).then( () => mo.readEPs() );
 
 /* user, etc. aus AD einlesen TODO als cron job konstruieren */
-const dataservice = new DataService(db, metadata.SPK);
-dataservice.readData();
+timers.setTimeout( () => {
+  const dataservice = new DataService(db, metadata.SPK);
+  dataservice.readData();
+}, 5000); // 5 sec, damit alles initalisiert ist
 
 // let rd = new FarcFilesystem();
 //// rd.testdb();
