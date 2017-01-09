@@ -36,7 +36,7 @@ export class FarcUserDAO {
   // DEBUG
   public importFile(file: string) {
     let config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach( u => {
+    config.user.forEach( (u) => {
       // let usr = new this.model.USER({
       let usr = new this.db.farcUserModel({
         uid: u.uid,
@@ -88,7 +88,7 @@ export class FarcUserDAO {
   public testfile(file: string) {
     let uids = [];
     let config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach( u => {
+    config.user.forEach( (u) => {
       uids.push(u.uid);
     });
     uids.pop();

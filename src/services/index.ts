@@ -9,3 +9,5 @@ export * from "./ad.service";
 export * from "./farc.filesystem";
 export * from "./farc.tree";
 export * from "./farc.db";
+export * from "./data.service";
+export * from "./data.event.emitter";

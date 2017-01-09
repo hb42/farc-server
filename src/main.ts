@@ -18,8 +18,8 @@ import {
 
 // import {FarcMockup} from "./farc.mockup";
 import {
-  // ADService,
   AspAPI,
+  DataService,
   FarcAPI,
   FarcDB,
   // FarcFilesystem,
@@ -37,30 +37,30 @@ import {
 
 // aus Webpack via DefinePlugin
 declare var WEBPACK_DATA;
-let metadata = WEBPACK_DATA.metadata;
+const metadata = WEBPACK_DATA.metadata;
 process.env.ENV = metadata.ENV;
 process.env.NODE_ENV = metadata.NODE_ENV;
 
 /*
-  Mehr Threads fuer fs und mongo(?) bereitstellen (default 4)
-  -> http://stackoverflow.com/questions/22644328/when-is-the-thread-pool-used
-  (alt.(?): --v8-pool-size=)
+ Mehr Threads fuer fs und mongo(?) bereitstellen (default 4)
+ -> http://stackoverflow.com/questions/22644328/when-is-the-thread-pool-used
+ (alt.(?): --v8-pool-size=)
  */
 process.env.UV_THREADPOOL_SIZE = 127;
 console.dir(process.env);
 // config file
 let configfile = metadata.CONFIGFILE;
 configfile = "./resource/" + configfile;
-let config = JSON.parse(fs.readFileSync(configfile, "utf8"));
+const config = JSON.parse(fs.readFileSync(configfile, "utf8"));
 
 // let mysql = new MySQL("localhost", "farc", "farc", "farcpw");
 
 // DB-Connection
-let db = new FarcDB(config.mongodbServer, config.mongodbDB, config.mongodbPort,
-                    { user: farcUser, pass: farcPwd } );
+const db = new FarcDB(config.mongodbServer, config.mongodbDB, config.mongodbPort,
+    { user: farcUser, pass: farcPwd } );
 
 // // FARC-Server starten
-let farcserver = new Webserver(metadata.PORT, "farc", new FarcUserCheck(db));
+const farcserver = new Webserver(metadata.PORT, "farc", new FarcUserCheck(db));
 
 farcserver.setFaviconPath("./resource/favicon.ico");
 farcserver.addApi("/farc", new FarcAPI(db));
@@ -70,8 +70,8 @@ farcserver.start();
 // wird nur gebraucht, wenn kein IIS vorhanden
 if (!metadata.SPK) {
 // fake IIS
-  let fakeIISserver = new Webserver(metadata.PORT + 42, "asp");
-  let asp = new AspAPI();
+  const fakeIISserver = new Webserver(metadata.PORT + 42, "asp");
+  const asp = new AspAPI();
   asp.setUser("v998dpve\\s0770001");
   asp.setWebservice({
                       farc: {server: "http://localhost:23000", url: "/authenticate"},
@@ -99,10 +99,9 @@ if (!metadata.SPK) {
 // let mo: FarcMockup = new FarcMockup();
 // mo.makeDrive(metadata.SPK).then( () => mo.readEPs() );
 
-/* user aus AD einlesen TODO als cron job konstruieren */
-// let AD: ADService = new ADService();
-// AD.updateEps();
-// AD.updateAll();
+/* user, etc. aus AD einlesen TODO als cron job konstruieren */
+const dataservice = new DataService(db, metadata.SPK);
+dataservice.readData();
 
 // let rd = new FarcFilesystem();
 //// rd.testdb();
@@ -116,16 +115,16 @@ if (!metadata.SPK) {
 //   console.info(testep.replace(pattern, "").replace(/\\/g, "/").toLowerCase());
 // }
 /*
-CREATE TABLE "SBS_MASTER"."SBS_APKLASSE"
-(	"APKLASSE_INDEX" NUMBER(10,0) NOT NULL ENABLE,
-    "APTYP_INDEX" NUMBER(10,0),
-    "APKLASSE" VARCHAR2(50 BYTE) NOT NULL ENABLE,
-    "FLAG" NUMBER(10,0),
-    CONSTRAINT "SBS_APKLASSE_PK" PRIMARY KEY ("APKLASSE_INDEX") ENABLE,
-    CONSTRAINT "SBS_APKLASSE_SBS_APTYP_FK1" FOREIGN KEY ("APTYP_INDEX")
-REFERENCES "SBS_MASTER"."SBS_APTYP" ("APTYP_INDEX") ON DELETE CASCADE ENABLE
-) ;
-*/
+ CREATE TABLE "SBS_MASTER"."SBS_APKLASSE"
+ (	"APKLASSE_INDEX" NUMBER(10,0) NOT NULL ENABLE,
+ "APTYP_INDEX" NUMBER(10,0),
+ "APKLASSE" VARCHAR2(50 BYTE) NOT NULL ENABLE,
+ "FLAG" NUMBER(10,0),
+ CONSTRAINT "SBS_APKLASSE_PK" PRIMARY KEY ("APKLASSE_INDEX") ENABLE,
+ CONSTRAINT "SBS_APKLASSE_SBS_APTYP_FK1" FOREIGN KEY ("APTYP_INDEX")
+ REFERENCES "SBS_MASTER"."SBS_APTYP" ("APTYP_INDEX") ON DELETE CASCADE ENABLE
+ ) ;
+ */
 // let cr = `
 // create table farc.test1 (
 //   id int(11) not null auto_increment,
@@ -140,25 +139,25 @@ REFERENCES "SBS_MASTER"."SBS_APTYP" ("APTYP_INDEX") ON DELETE CASCADE ENABLE
 //   console.dir(rc);
 // });
 /*
-let entries = [];
-for (let i = 0; i < 100000; i++) {
-  let root: FarcEntry = {
-    parent    : 1,
-    key       : 1,
-    label     : "test",
-    timestamp: null,
-    size     : 0,
-    type     : FarcEntryTypes.ep,
-    arc      : false,
-    path     : ["test1", "test2"],
-    leaf     : true,
-    selected : false,
-  };
-  entries.push(root);
-}
-farcEntryModel.insertMany(entries).then( rc => console.info("insertMany " + rc))
-    .catch(e => console.info("### insertMany ERROR " + e));
-*/
+ let entries = [];
+ for (let i = 0; i < 100000; i++) {
+ let root: FarcEntry = {
+ parent    : 1,
+ key       : 1,
+ label     : "test",
+ timestamp: null,
+ size     : 0,
+ type     : FarcEntryTypes.ep,
+ arc      : false,
+ path     : ["test1", "test2"],
+ leaf     : true,
+ selected : false,
+ };
+ entries.push(root);
+ }
+ farcEntryModel.insertMany(entries).then( rc => console.info("insertMany " + rc))
+ .catch(e => console.info("### insertMany ERROR " + e));
+ */
 
 // Beim Beenden aufraeumen
 process.on("SIGINT", () => {

@@ -243,10 +243,10 @@ module.exports = function(env) {
       ],
 
       noParse: [
-        sonstDir,
+        //sonstDir,
         /\.min\.js/,
         // path.join(cwd, 'node_modules', 'angular2', 'bundles'),
-        npmRoot + '/zone.js/dist',
+        //npmRoot + '/zone.js/dist',
         /\/@types\/mongoose/,
       ]
     },

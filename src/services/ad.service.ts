@@ -5,83 +5,106 @@
 import * as ldap from "ldapjs";
 
 import {
-  FarcDriveDocument,
-  FarcUser,
-  FarcUserDocument,
-} from "@hb42/lib-farc";
-import {
   ldapAdmin,
   ldapPwd,
 } from "@hb42/lib-passwd";
 
 import {
-  FarcUserDAO,
-} from "../model";
-import {
-  FarcDB,
+  DataEventEmitter,
 } from "./";
-
-/* nicht mehr im AD vorhandene User aus DB entfernen
- let start;
- usersession.find(null)
- .then( (res: FarcUserDocument[]) => {
- console.info("find " + res.length);
- let uids = [];
- res.forEach((u: FarcUserDocument) => {
- uids.push(u.uid);
- });
- uids.pop();
- uids.pop();
- console.info("query " + uids.length);
- return uids;
- })
- .then( ids => {
- start = Date.now();
- return usersession.find({ "uid" : { $nin: ids } });
- })
- .then( (delta: FarcUserDocument[]) => {
- console.dir(delta);
- console.info("delta " + delta.length + "  time: " + (Date.now() - start));
- })
- .catch( err => {
- console.info("ERROR " + err);
- });
- */
 
 export class ADService {
 
   private client;
-  private userDAO: FarcUserDAO;
   private ID;
 
-  constructor(private db: FarcDB) {
+  constructor(private event: DataEventEmitter) {
     this.client = ldap.createClient({url: "ldap://v998dpve.v998.intern:389"});
-    this.userDAO = new FarcUserDAO(db);
+    this.client.bind(ldapAdmin, ldapPwd,
+                     (err) => {
+                       if (err) {
+                         console.info("error binding " + err);
+                       } else {
+                         event.emit(event.evtADready);
+                       }
+                     });
   }
 
-  public updateUsers() {
-    this.query(() => this.updateusers());
+  public readUsers() {
+    this.queryUserCallback(this.event);
+    // this.query((evt) => this.queryUserCallback(evt));
   }
 
-  public updateEps(drvstd?: FarcDriveDocument, drvarc?: FarcDriveDocument) {
-    // let paths: string[] =
-    this.query((drives) => this.updateeps(drives), {std: drvstd, arc: drvarc});
-    // TODO drive holen, bzw. uebergeben, damit entry obj bauen und speichern
-    // console.info("Endpunkte:");
-    // paths.forEach( p => console.info(p));
+  //
+  public readEps() {
+    this.updateeps(this.event);
+    // this.query((evt, drives) => this.updateeps(evt, drives), {std: drvstd, arc: drvarc});
   }
 
+  public readRoles() {
+    this.updateroles(this.event);
+    // this.query((evt) => this.updateroles(evt));
+  }
+
+  // statt bind() im c'tor
   private query(callback, payload?) {
     this.client.bind(ldapAdmin, ldapPwd,
                      (err) => {
-          if (err) {
-            console.info("error binding " + err);
-          } else {
-            callback(payload);
-          }
-        });
+                       if (err) {
+                         console.info("error binding " + err);
+                       } else {
+                         callback(this.event, payload);
+                       }
+                     });
   }
 
+  private queryUserCallback(evt: DataEventEmitter) {
+
+    console.info("queryUserCallback");
+    let opts = {
+      filter    : "(&(objectCategory=person)(objectClass=user))",
+      scope     : "sub",
+      paging    : true,
+//  sizeLimit: 2000,
+      attributes: ["cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
+    };
+
+    let users = [];
+
+    this.client
+        .search("OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
+                opts,
+                (err, res) => {
+                  if (err) {
+                    console.info("ERROR: " + err);
+                  } else {
+                    res.on("page", (resp) => {
+                      console.info("page");
+                    });
+                    res.on("searchEntry", (entry) => {
+                      users.push(entry.object);
+                    });
+                    res.on("searchReference", (referral) => {
+                      console.info("referral: " + referral.uris.join());
+                    });
+                    res.on("error", (e) => {
+                      console.error("error getting users: " + e.message);
+                    });
+                    res.on("end", (result) => {
+                      console.info("queryUserCallback on.end");
+                      evt.emit(evt.evtReadAdUsers, users);
+                      // this.client.unbind((uberr) => {
+                      //   if (uberr) {
+                      //     console.error("error unbinding " + uberr);
+                      //   }
+                      // });
+                    });
+                  }
+                });
+  }
+
+  // User mit allen Rollen -> erforderlich?
+  // TODO trennen in ldap + db ins
   private updateusers() {
 
     let opts = {
@@ -89,7 +112,7 @@ export class ADService {
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
-      attributes: [ "cn", "sn", "givenName", "displayName", "mail", "distinguishedName"],
+      attributes: [ "cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
     };
     let opts2 = { filter: "(&(member:1.2.840.113556.1.4.1941:=%s))",
       scope: "sub",
@@ -129,56 +152,60 @@ export class ADService {
                       console.error("error: " + e.message);
                     });
                     res.on("end", (result) => {
-                      let usrcnt = users.length;
-                      let cnt = 0;
-                      users.forEach((u) => {
-                        cnt++;
-                        u.roles = [];
-                        opts2.filter = "(&(member:1.2.840.113556.1.4.1941:=" + u.dn + "))";
-                        this.client
-                            .search("OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
-                                    opts2,
-                                    (error, roles) => {
-                                      if (error) {
-                                        console.info("ERROR2: " + error);
-                                      } else {
-                                        roles.on("searchEntry", (entry) => {
-                                          u.roles.push(entry.object);
-                                        });
-                                        roles.on("end", (r) => {
-                                          let user: FarcUser = {
-                                            uid: u.cn,
-                                            name: u.sn,
-                                            vorname: u.givenName,
-                                            mail: u.mail,
-                                            roles: [],
-                                            session: null,
-                                          };
-                                          u.roles.forEach((role) => {
-                                            user.roles.push(role.cn.toLowerCase());
-                                          });
-                                          this.saveUser(user);
-                                          // TODO nicht mehr existente User loeschen
-                                          if (cnt === usrcnt) {
-                                            this.client.unbind( (ube) => {
-                                              if (ube) {
-                                                console.error("error unbinding " + ube);
-                                              }
-                                            });
-                                          }
-                                          // console.info(JSON.stringify(user), ",");
-                                        });
-                                      }
-                                    });
-                      });
+                      // DEBUG
+                      // let exp = {u: users};
+                      // this.fs.writeFile("ad_users.json", JSON.stringify(exp, null, 2));
+                      /*
+                       let usrcnt = users.length;
+                       let cnt = 0;
+                       users.forEach((u) => {
+                       cnt++;
+                       u.roles = [];
+                       opts2.filter = "(&(member:1.2.840.113556.1.4.1941:=" + u.dn + "))";
+                       this.client
+                       .search("OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
+                       opts2,
+                       (error, roles) => {
+                       if (error) {
+                       console.info("ERROR2: " + error);
+                       } else {
+                       roles.on("searchEntry", (entry) => {
+                       u.roles.push(entry.object);
+                       });
+                       roles.on("end", (r) => {
+                       let user: FarcUser = {
+                       uid: u.cn,
+                       name: u.sn,
+                       vorname: u.givenName,
+                       mail: u.mail,
+                       roles: [],
+                       session: null,
+                       };
+                       u.roles.forEach((role) => {
+                       user.roles.push(role.cn.toLowerCase());
+                       });
+                       this.saveUser(user);
+                       // TODO nicht mehr existente User loeschen
+                       if (cnt === usrcnt) {
+                       this.client.unbind( (ube) => {
+                       if (ube) {
+                       console.error("error unbinding " + ube);
+                       }
+                       });
+                       }
+                       // console.info(JSON.stringify(user), ",");
+                       });
+                       }
+                       });
+                       });
+                       */
                     });
-
                   }
                 });
 
   }
 
-  private updateeps(drvs: any) {
+  private updateeps(evt: DataEventEmitter) {
 
     this.ID = 0;
     let opts = {
@@ -190,6 +217,7 @@ export class ADService {
     };
     let pattern = /^.nd_V998DPVE(\\E077\\Daten)?\\{1,2}/i;
 
+    let eps = [];
     this.client
         .search("OU=Dateisystemzugriff,OU=Gruppen,OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
                 opts,
@@ -204,76 +232,71 @@ export class ADService {
                       let path = entry.object.displayName;
                       if (path.match(pattern)) {
                         let ep = path.replace(pattern, "").replace(/\\/g, "/").toLowerCase();
-                        // eps.push(ep);  // kann raus
-                        this.saveEP(ep, entry.object.cn, drvs);
+                        eps.push(ep);
                       }
                     });
                     res.on("searchReference", (referral) => {
                       console.info("referral: " + referral.uris.join());
                     });
                     res.on("error", (e) => {
-                      console.error("error: " + e.message);
+                      console.error("error getting EPs: " + e.message);
                     });
                     res.on("end", (result) => {
-                      this.client.unbind((ube) => {
-                        if (ube) {
-                          console.error("error unbinding " + ube);
-                        }
-                      });
-                      console.info("end ldap search");
+                      evt.emit(evt.evtReadAdEps, eps);
+                      console.info("end ldap user search");
+                      // this.client.unbind((uberr) => {
+                      //   if (uberr) {
+                      //     console.error("error unbinding " + uberr);
+                      //   }
+                      // });
+
                     });
                   }
                 });
   }
 
-  private saveUser(user: FarcUser) {
-    console.info("save user " + user.uid);
-    this.userDAO.findOne(user.uid)
-        .then( (u: FarcUserDocument) => {
-          if (u) {
-            this.userDAO.updateUser(u, user)
-                .catch((e) => {
-                  console.error("error updating user " + user.uid + " " + e);
-                });
-          } else {
-            this.userDAO.create([user])
-                .catch((e2) => {
-                  console.error("error creating user " + user.uid + " " + e2);
-                });
-          }
-        })
-        .catch( (err) => {
-          console.error("error searching user " + user.uid);
-        });
-  }
+  private updateroles(evt: DataEventEmitter) {
 
-  private saveEP(path: string, role: string, drives: any) {
-    let p = path.split(/\//);
-    let ep = p.pop();
-    // console.info("       " + ep + " above.len = " + p.length);
-    new this.db.farcEndpunktModel({
-      endpunkt: ep,
-      above: p,
-      size: 0,
-      drive: drives.std.id,
-      arc: drives.std.arc,
-      epid: role,
-      key: this.ID++,
-    }).save().then( (entry) => {
-      console.info("saveEP id=" + entry.key + " " + role + " = " + path);
-    });
-    new this.db.farcEndpunktModel({
-      endpunkt: ep,
-      above: p,
-      size: 0,
-      drive: drives.arc.id,
-      arc: drives.arc.arc,
-      epid: role,
-      key: this.ID++,
-    }).save().then( (entry) => {
-      console.info("saveEP id=" + entry.key + " " + role + " = " + path);
-    });
+    this.ID = 0;
+    let opts = {
+      filter: "(&(objectCategory=group)(objectClass=group))",
+      scope: "sub",
+      paging: true,
+//  sizeLimit: 2000,
+      attributes: [ "cn", "displayName", "distinguishedName", "description" ],
+    };
 
+    let roles = [];
+    this.client
+        .search("OU=AnwenderRollen,OU=Gruppen,OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
+                opts,
+                (err, res) => {
+                  if (err) {
+                    console.info("ERROR: " + err);
+                  } else {
+                    res.on("page", (resp) => {
+                      console.info("page");
+                    });
+                    res.on("searchEntry", (entry) => {
+                      roles.push(entry.object);
+                    });
+                    res.on("searchReference", (referral) => {
+                      console.info("referral: " + referral.uris.join());
+                    });
+                    res.on("error", (e) => {
+                      console.error("error getting roles: " + e.message);
+                    });
+                    res.on("end", (result) => {
+                      evt.emit(evt.evtReadAdRoles, roles);
+                      console.info("end ldap role search");
+                      // this.client.unbind((uberr) => {
+                      //   if (uberr) {
+                      //     console.error("error unbinding " + uberr);
+                      //   }
+                      // });
+                    });
+                  }
+                });
   }
 
 }
