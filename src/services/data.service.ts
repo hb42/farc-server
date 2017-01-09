@@ -49,7 +49,7 @@ export class DataService {
    */
   public readData() {
     if (this.spk) {
-      let AD: ADService = new ADService(this.dataEventHandler);
+      const AD: ADService = new ADService(this.dataEventHandler);
       // Auf AD-Connect warten
       // Ergebnisse landen im EventHandler s. u.
       this.dataEventHandler.on(this.dataEventHandler.evtADready, () => {
@@ -101,16 +101,16 @@ export class DataService {
    */
   private saveAD(fname: string, dat: any) {
     if (this.spk) {
-      let exp = {data: dat};
+      const exp = {data: dat};
       fs.writeFile(fname, JSON.stringify(exp, null, 2));
     }
 
   }
 
   private saveUsers(obj: any) {
-    let validusers = [];
+    const validusers = [];
     obj.forEach( (u) => {
-      let user: FarcUser = {
+      const user: FarcUser = {
         uid    : u.cn,
         name   : u.sn,
         vorname: u.givenName,

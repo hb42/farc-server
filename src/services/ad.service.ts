@@ -61,7 +61,7 @@ export class ADService {
   private queryUserCallback(evt: DataEventEmitter) {
 
     console.info("queryUserCallback");
-    let opts = {
+    const opts = {
       filter    : "(&(objectCategory=person)(objectClass=user))",
       scope     : "sub",
       paging    : true,
@@ -69,7 +69,7 @@ export class ADService {
       attributes: ["cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
     };
 
-    let users = [];
+    const users = [];
 
     this.client
         .search("OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
@@ -107,20 +107,20 @@ export class ADService {
   // TODO trennen in ldap + db ins
   private updateusers() {
 
-    let opts = {
+    const opts = {
       filter: "(&(objectCategory=person)(objectClass=user))",
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
       attributes: [ "cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
     };
-    let opts2 = { filter: "(&(member:1.2.840.113556.1.4.1941:=%s))",
+    const opts2 = { filter: "(&(member:1.2.840.113556.1.4.1941:=%s))",
       scope: "sub",
       paging: true,
 //              sizeLimit: 200,
       attributes: ["cn", "displayName", "distinguishedName", "description"]};
 
-    let users = [];
+    const users = [];
 
     this.client
         .search("OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
@@ -208,16 +208,16 @@ export class ADService {
   private updateeps(evt: DataEventEmitter) {
 
     this.ID = 0;
-    let opts = {
+    const opts = {
       filter: "(&(objectCategory=group)(objectClass=group))",
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
       attributes: [ "cn", "displayName", "distinguishedName", "description" ],
     };
-    let pattern = /^.nd_V998DPVE(\\E077\\Daten)?\\{1,2}/i;
+    const pattern = /^.nd_V998DPVE(\\E077\\Daten)?\\{1,2}/i;
 
-    let eps = [];
+    const eps = [];
     this.client
         .search("OU=Dateisystemzugriff,OU=Gruppen,OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
                 opts,
@@ -229,9 +229,9 @@ export class ADService {
                       console.info("page");
                     });
                     res.on("searchEntry", (entry) => {
-                      let path = entry.object.displayName;
+                      const path = entry.object.displayName;
                       if (path.match(pattern)) {
-                        let ep = path.replace(pattern, "").replace(/\\/g, "/").toLowerCase();
+                        const ep = path.replace(pattern, "").replace(/\\/g, "/").toLowerCase();
                         eps.push(ep);
                       }
                     });
@@ -258,7 +258,7 @@ export class ADService {
   private updateroles(evt: DataEventEmitter) {
 
     this.ID = 0;
-    let opts = {
+    const opts = {
       filter: "(&(objectCategory=group)(objectClass=group))",
       scope: "sub",
       paging: true,
@@ -266,7 +266,7 @@ export class ADService {
       attributes: [ "cn", "displayName", "distinguishedName", "description" ],
     };
 
-    let roles = [];
+    const roles = [];
     this.client
         .search("OU=AnwenderRollen,OU=Gruppen,OU=E077,OU=Kunden,dc=v998dpve,dc=v998,dc=intern",
                 opts,
