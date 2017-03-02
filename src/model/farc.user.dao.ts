@@ -35,10 +35,10 @@ export class FarcUserDAO {
   //  "roles":["e077guv-zzv-791-itundkommunikation-coburg-lichtenfels-spk", ... ]} ,
   // DEBUG
   public importFile(file: string) {
-    let config = JSON.parse(fs.readFileSync(file, "utf8"));
+    const config = JSON.parse(fs.readFileSync(file, "utf8"));
     config.user.forEach( (u) => {
       // let usr = new this.model.USER({
-      let usr = new this.db.farcUserModel({
+      const usr = new this.db.farcUserModel({
         uid: u.uid,
         name: u.name,
         vorname: u.vorname,
@@ -58,11 +58,6 @@ export class FarcUserDAO {
   public findOne(uid: string): Promise<FarcUserDocument> {
     // empty result -> null (kein error)
     return this.db.farcUserModel.findOne({uid: uid.toUpperCase()}).exec();
-  }
-
-  // public updateSession(user: FarcUserDocument): Promise<any> {
-  public updateSession(id: string, data: any): Promise<any> {
-    return this.db.farcUserModel.findByIdAndUpdate(id, { session: data }, {new: true} ).exec();
   }
 
   public updateUser(user: FarcUserDocument, neu: FarcUser ): Promise<any> {
@@ -86,8 +81,8 @@ export class FarcUserDAO {
 
   // DEBUG
   public testfile(file: string) {
-    let uids = [];
-    let config = JSON.parse(fs.readFileSync(file, "utf8"));
+    const uids = [];
+    const config = JSON.parse(fs.readFileSync(file, "utf8"));
     config.user.forEach( (u) => {
       uids.push(u.uid);
     });

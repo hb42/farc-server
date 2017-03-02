@@ -10,10 +10,8 @@ import {
  Laufwerk-Daten
  */
 export let farcDriveSchema = new Schema({
-  displayname: String,
+  displayname: String,  // source-Name (z.B. J:)
   sourcepath : String,
-  arc        : Boolean,
-  // archivepath: String,
+  archivepath: String,
   type       : Number,  // Enum FarcDriveTypes
 });
-

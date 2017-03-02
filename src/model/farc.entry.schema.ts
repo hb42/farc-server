@@ -10,8 +10,8 @@ import {
  Baum-Knoten  (kompatibel zu primeNG TreeNode)
  */
 export let farcEntrySchema = new Schema ({
-  parent       : Number,
-  key          : {type: Number, index: {unique: true, dropDups: true}},
+  parent       : String, // Number,
+  key          : {type: String, index: {unique: true } },
   label        : String,    // file-/dir-name
   timestamp    : Number,     // milis
   size         : Number,
@@ -22,4 +22,7 @@ export let farcEntrySchema = new Schema ({
   selected     : Number,  // Enum FarcSelectType
   selectUid    : String,         //   UID
   selectDate   : Number,        //   milis
+  processDate  : Number,    // Verarbeitung millis
+  processResult: String,    //   "OK" oder Fehlermeldung
+
 });

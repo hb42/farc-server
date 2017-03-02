@@ -6,18 +6,11 @@ import {
   Schema,
 } from "mongoose";
 
-export let farUserSchema = new Schema({
+export let farcUserSchema = new Schema({
   // user
   uid: String,
   name: String,
   vorname: String,
   mail: String,
-  roles: [String],
-
-  // session data
-  session: {
-    route: String,
-    treepath: [String],
-  },
-
+  roles: [String],  // dn (sinnvoll?)
 });

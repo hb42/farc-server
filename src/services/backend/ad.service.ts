@@ -11,7 +11,7 @@ import {
 
 import {
   DataEventEmitter,
-} from "./";
+} from "../data";
 
 export class ADService {
 
@@ -66,7 +66,7 @@ export class ADService {
       scope     : "sub",
       paging    : true,
 //  sizeLimit: 2000,
-      attributes: ["cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
+      attributes: ["cn", "sn", "givenName", "displayName", "mail", "memberOf"],
     };
 
     const users = [];
@@ -112,13 +112,13 @@ export class ADService {
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
-      attributes: [ "cn", "sn", "givenName", "displayName", "mail", "distinguishedName", "memberOf"],
+      attributes: [ "cn", "sn", "givenName", "displayName", "mail", "memberOf"],
     };
     const opts2 = { filter: "(&(member:1.2.840.113556.1.4.1941:=%s))",
       scope: "sub",
       paging: true,
 //              sizeLimit: 200,
-      attributes: ["cn", "displayName", "distinguishedName", "description"]};
+      attributes: ["cn", "displayName", "description"]};
 
     const users = [];
 
@@ -213,7 +213,7 @@ export class ADService {
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
-      attributes: [ "cn", "displayName", "distinguishedName", "description" ],
+      attributes: [ "cn", "displayName", "description" ],
     };
     const pattern = /^.nd_V998DPVE(\\E077\\Daten)?\\{1,2}/i;
 
@@ -263,7 +263,7 @@ export class ADService {
       scope: "sub",
       paging: true,
 //  sizeLimit: 2000,
-      attributes: [ "cn", "displayName", "distinguishedName", "description" ],
+      attributes: [ "cn", "displayName", "description" ],
     };
 
     const roles = [];

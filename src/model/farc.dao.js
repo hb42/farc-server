@@ -1,31 +1,33 @@
+/**
+ * Created by hb on 25.05.16.
+ */
 "use strict";
-var mongoose = require("mongoose");
-var farc_model_1 = require("./model/farc-model");
-var Schema = mongoose.Schema;
-var ObjectId = mongoose.Schema.Types.ObjectId;
-var FarcService = (function () {
-    function FarcService() {
+// let Schema = mongoose.Schema;
+// let ObjectId = Schema.Types.ObjectId;
+var FarcDAO = (function () {
+    function FarcDAO(db) {
+        this.db = db;
+        //
     }
-    FarcService.prototype.getEps = function () {
-        console.log("farcService.getEps() ");
-        return farc_model_1.EP.find(function (err) {
-            if (err) {
-                console.log("error @find " + err);
-            }
-            else {
-                console.log("@find");
-            }
-        }).exec(function (err) {
-            if (err) {
-                console.log("error @exec " + err);
-            }
-            else {
-                console.log("@exec ");
-            }
-        });
+    FarcDAO.prototype.getEps = function () {
+        console.info("farcService.getEps() ");
+        return this.db.farcEndpunktModel.find({}).exec();
+        // return this.model.EP.find(err => {
+        //   if (err) {
+        //     console.log("error @find " + err);
+        //   } else {
+        //     console.log("@find");
+        //   }
+        // }).exec(err => {
+        //   if (err) {
+        //     console.log("error @exec " + err);
+        //   } else {
+        //     console.log("@exec ");
+        //     // return result;
+        //   }
+        // });
     };
-    return FarcService;
+    return FarcDAO;
 }());
-exports.FarcService = FarcService;
+exports.FarcDAO = FarcDAO;
 ;
-//# sourceMappingURL=farc-service.js.map

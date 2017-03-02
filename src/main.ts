@@ -5,9 +5,17 @@
  * s.a. https://dzone.com/articles/getting-started-with-nodejs-express-and-mongoose
  */
 
+// f. server rendering
+import "reflect-metadata";
+
 import * as fs from "fs";
 // import * as fse from "fs-extra";
 import * as timers from "timers";
+
+import {
+  FarcDrive,
+  FarcDriveTypes,
+} from "@hb42/lib-farc";
 
 import {
   farcPwd,
@@ -102,9 +110,34 @@ if (!metadata.SPK) {
 
 /* user, etc. aus AD einlesen TODO als cron job konstruieren */
 timers.setTimeout( () => {
-  const dataservice = new DataService(db, metadata.SPK);
-  dataservice.readData();
-}, 5000); // 5 sec, damit alles initalisiert ist
+  // alle vorhandenen Daten loeschen (dauert ein paar Minuten!)
+  // const promiselist = [];
+  // promiselist.push(db.farcEndpunktModel.find().remove().exec());
+  // promiselist.push(db.farcOeModel.find().remove().exec());
+  // promiselist.push(db.farcDriveModel.find().remove().exec());
+  // promiselist.push(db.farcEntryModel.find().remove().exec());
+  // promiselist.push(db.farcUserModel.find().remove().exec());
+  // Promise.all(promiselist).then( () => {
+  //   // Drives anlegen
+  //   const drives: FarcDrive[] = [
+  //     {displayname: "J:", sourcepath: "/srv/VRZ/dfsroot/E077/daten",
+  //       archivepath: "/srv/samba/_archive/daten", type: FarcDriveTypes.daten},
+  //     {displayname: "U:", sourcepath: "/srv/VRZ/dfsroot/E077/home",
+  //       archivepath: "/srv/samba/_archive/home", type: FarcDriveTypes.home},
+  //     {displayname: "I:", sourcepath: "/srv/VRZ/dfsroot/E077/inst",
+  //       archivepath: "/srv/samba/_archive/inst", type: FarcDriveTypes.inst},
+  //   ];
+  //   db.farcDriveModel.create(drives).then( () => {
+  //     console.info("drives created");
+  //   });
+  //  });
+
+  // Daten einlesen
+  // const dataservice = new DataService(db, metadata.SPK);
+  // dataservice.readData();
+
+}, 5000); // 5 sec, damit vorher alles initalisiert ist
+/* */
 
 // let rd = new FarcFilesystem();
 //// rd.testdb();

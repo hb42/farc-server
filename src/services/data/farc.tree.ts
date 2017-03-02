@@ -4,9 +4,10 @@
  * Created by hb on 04.09.16.
  */
 
-import * as R from "ramda";
+// import * as R from "ramda";
 
 import {
+  ARCHIVE_NAME,
   FarcDriveDocument,
   FarcEndpunktDocument,
   FarcEntryDocument,
@@ -18,14 +19,14 @@ import {
 
 import {
   FarcDB,
-} from "./";
+} from "../backend";
 
 export class FarcTree {
 
   private tree: FarcTreeNode[];  // Baum ab Drive bis EP (Rest holt Client bei Bedarf)
 
   constructor(private db: FarcDB) {
-    this.makeTrees().then(tree => {
+    this.makeTrees().then( (tree) => {
       this.tree = tree;
     });
   }
@@ -36,12 +37,23 @@ export class FarcTree {
    * @returns {any}
    */
   public makeTrees(): Promise<FarcTreeNode[]> {
-    // fn's deklarieren
-    let drives = (select) => this.db.farcDriveModel.find(select);
-    let buildTrees = (drvs) => Promise.all( drvs.map((drv: FarcDriveDocument) => this.makeDriveTree(drv)) );
-    let gettree = R.bind( R.pipeP(drives, buildTrees), this ); // IDE zeigt Fehler, typings nicht aktuell/fehlerhaft
-    // starten
-    return gettree({});
+    // fn's deklarieren (kleiner Versuch im funktionalen Programmieren)
+    const drives = (select) => this.db.farcDriveModel.find(select);
+    const buildTrees = (drvs) => {
+      const promises: Array<Promise<FarcTreeNode>> = [];
+      // Promise.all(drvs.map((drv: FarcDriveDocument) => this.makeDriveTree(drv)))
+      drvs.forEach( (drv: FarcDriveDocument) => {
+        promises.push(this.makeDriveTree(drv, false));
+        promises.push(this.makeDriveTree(drv, true));
+      });
+      return Promise.all(promises);
+    };
+    // fn chain mit Ramda
+    // const gettree = R.bind( R.pipeP(drives, buildTrees), this ); // IDE zeigt Fehler, typings nicht aktuell/Fehler
+    // return gettree({});
+
+    // chaining ohne Ramda
+    return drives( {} ).then( (drvs) => buildTrees(drvs) );
   }
 
   /**
@@ -49,40 +61,41 @@ export class FarcTree {
    *
    * @returns Promise<FarcTreeNode>
    */
-  public makeDriveTree(drive: FarcDriveDocument): Promise<FarcTreeNode> {
-
-    let driveroot: FarcTreeNode = {
-      label     : drive.displayname,
+  public makeDriveTree(drive: FarcDriveDocument, archive: boolean): Promise<FarcTreeNode> {
+    const drivename = archive ? ARCHIVE_NAME + drive.displayname : drive.displayname;
+    const driveroot: FarcTreeNode = {
+      label     : drivename,
       timestamp: null,
       size     : 0,
-      children : <FarcTreeNode[]> [],
+      children : [] as FarcTreeNode[],
       files    : null,
       entrytype: FarcEntryTypes.strukt,
-      arc      : drive.arc,
-      path     : [drive.displayname],
+      arc      : archive,
+      path     : [drivename],
       entryid  : null,
       leaf     : false,
       selected : FarcSelectType.none,
       type     : FarcEntryTypes[FarcEntryTypes.strukt],
     };
 
-    return this.db.farcEndpunktModel.find({drive: drive.id}).exec().then((result) => {
+    return this.db.farcEndpunktModel.find({drive: drive._id}).exec().then((result) => {
       result.forEach( (ep: FarcEndpunktDocument) => {
         let node: FarcTreeNode = driveroot;
         // Pfad ab drive zum EP aufbauen
-        ep.above.forEach(dir => {
-          let ch: FarcTreeNode[] = node.children.filter( n => dir === n.label );
+        const above: string[] = ep.above ? ep.above.split("/") : [];
+        above.forEach( (dir) => {
+          const ch: FarcTreeNode[] = node.children.filter( (n) => dir === n.label );
           if (ch && ch.length === 1) {
             node = ch[0];
           } else {
-            let child: FarcTreeNode = {
+            const child: FarcTreeNode = {
               label     : dir,
               timestamp: null,
               size     : 0,
-              children : <FarcTreeNode[]> [],
+              children : [] as FarcTreeNode[],
               files    : null,
               entrytype: FarcEntryTypes.strukt,
-              arc      : drive.arc,
+              arc      : archive,
               path     : node.path.concat(dir),
               entryid  : null,
               leaf     : false,
@@ -93,23 +106,24 @@ export class FarcTree {
             node = child;
           }
         });
-        this.db.farcEntryModel.findOne({parent: ep.key}).exec().then( (epEntry: FarcEntryDocument) => {
-          let epnode: FarcTreeNode = {
-            entryid:   epEntry.key,
-            label:     epEntry.label,
-            timestamp: epEntry.timestamp,
-            size:      epEntry.size,
-            children:  null, // null => Client muss Daten holen, keine Daten == <FarcTreeNode[]> []
-            files:     null, // dto.
-            entrytype: FarcEntryTypes.ep,
-            arc:       epEntry.arc,
-            path:      epEntry.path, // node.path.concat(ep.endpunkt),
-            leaf:      epEntry.leaf,
-            selected:  FarcSelectType.none,
-            type:      FarcEntryTypes[FarcEntryTypes.ep],
-          };
-          node.children.push(epnode);
-
+        this.db.farcEntryModel.findOne({parent: ep._id, arc: archive}).exec().then( (epEntry: FarcEntryDocument) => {
+          if (epEntry) {
+            const epnode: FarcTreeNode = {
+              entryid  : epEntry.key,
+              label    : epEntry.label,
+              timestamp: epEntry.timestamp,
+              size     : epEntry.size,
+              children : null, // null => Client muss Daten holen, keine Daten == <FarcTreeNode[]> []
+              files    : null, // dto.
+              entrytype: FarcEntryTypes.ep,
+              arc      : epEntry.arc,
+              path     : epEntry.path, // node.path.concat(ep.endpunkt),
+              leaf     : epEntry.leaf,
+              selected : FarcSelectType.none,
+              type     : FarcEntryTypes[FarcEntryTypes.ep],
+            };
+            node.children.push(epnode);
+          }
         });
       });
       return driveroot;
@@ -122,11 +136,11 @@ export class FarcTree {
 
   public getTree(session: FarcSession): FarcTreeNode[] {
     // tree kopieren
-    let tree = JSON.parse(JSON.stringify(this.tree));
+    const tr = JSON.parse(JSON.stringify(this.tree));
     // TODO anhand session.roles EPs ein-/ausblenden
     //  -> .files = [], .children = [], leaf = true || .files = null, .children = null, .leaf ?
 
-    return tree;
+    return tr;
   }
   /**
    * Unterverzeichnisse fuer Knoten holen
@@ -134,7 +148,7 @@ export class FarcTree {
    * @param key - id des Knotens
    * @returns {Promise<FarcTreeNode[]>}
    */
-  public getChildren(key: number): Promise<FarcTreeNode[]> {
+  public getChildren(key: string): Promise<FarcTreeNode[]> {
     return this.getEntriesFor(key, FarcEntryTypes.dir);
   }
 
@@ -144,8 +158,16 @@ export class FarcTree {
    * @param key - id des Knotens
    * @returns {Promise<FarcTreeNode[]>}
    */
-  public getFiles(key: number): Promise<FarcTreeNode[]> {
+  public getFiles(key: string): Promise<FarcTreeNode[]> {
     return this.getEntriesFor(key, FarcEntryTypes.file);
+  }
+
+  /**
+   * get drives -> admin
+   * -> admin-modul?
+   */
+  public getDrives() {
+    return this.db.farcDriveModel.find().exec();
   }
 
   /**
@@ -155,10 +177,10 @@ export class FarcTree {
    * @param typ - Knoten-Typ
    * @returns {Promise<FarcTreeNode[]>}
    */
-  private getEntriesFor(key: number, typ: FarcEntryTypes): Promise<FarcTreeNode[]> {
+  private getEntriesFor(key: string, typ: FarcEntryTypes): Promise<FarcTreeNode[]> {
     return this.db.farcEntryModel.find({parent: key, type: typ}).exec().then( (entries: FarcEntryDocument[]) => {
       return entries.map( (entry: FarcEntryDocument) => {
-        let node: FarcTreeNode = {
+        return {
           entryid:    entry.key,
           label:      entry.label,
           timestamp:  entry.timestamp,
@@ -173,10 +195,9 @@ export class FarcTree {
           selectUid:  entry.selectUid,
           selectDate: entry.selectDate,
           type:       FarcEntryTypes[entry.type],
-        };
-        return node;
+        } as FarcTreeNode;
       });
-    }).catch( e => console.info("**** ERROR " + e));
+    }).catch( (e) => console.info("**** ERROR " + e));
   }
 
   /*

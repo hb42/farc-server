@@ -10,19 +10,26 @@ import {
 } from "@hb42/lib-server";
 
 import {
+  FarcConfigDAO,
   FarcUserDAO,
 } from "../model";
 import {
   FarcDB,
-} from "./";
+} from "./backend";
 
 export class FarcUserCheck implements UserCheck {
 
-  private sessiondata: FarcUserDocument;
+  private sessionuser: FarcUserDocument;
+  private sessiondata: any = null;
+
   private sessionDAO: FarcUserDAO;
+  private configDao: FarcConfigDAO;
+
+  private confName: string = "FARC_";
 
   constructor(private db: FarcDB) {
     this.sessionDAO = new FarcUserDAO(db);
+    this.configDao = new FarcConfigDAO(db);
   }
 
   /*
@@ -31,7 +38,7 @@ export class FarcUserCheck implements UserCheck {
    */
   public authUser(uid: string, pwd?: string): Promise<string> {
     let user: string;
-    let name = uid.split("\\")[1];
+    const name = uid.split("\\")[1];
     if (name) {
       user = name.toUpperCase();
     } else {
@@ -39,10 +46,15 @@ export class FarcUserCheck implements UserCheck {
     }
     return this.sessionDAO.findOne(user)
         .then( (u: FarcUserDocument) => {
-          this.sessiondata = u;
+          this.sessionuser = u;
+          this.confName += u.uid.toUpperCase();
+          this.configDao.findConfig(this.confName)
+              .then( (conf) => {
+                this.sessiondata = conf;
+              })
           return u.uid;
         })
-        .catch( err => {
+        .catch( (err) => {
           console.error("error fetching user " + err);
           return null;
         });
@@ -56,8 +68,9 @@ export class FarcUserCheck implements UserCheck {
   }
 
   // public setUserData(data: FarcUserDocument): Promise<any> {
-  public setUserData(id: string, session: any): Promise<any> {
-    return this.sessionDAO.updateSession(id, session);
+  public setUserData(session: any): Promise<any> {
+    this.sessiondata = session;
+    return this.configDao.updateConfig(this.confName, this.sessiondata);
   }
 
 }

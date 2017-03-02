@@ -90,7 +90,7 @@ export class SessionAPI implements RestApi {
         .get((req: express.Request, res: express.Response) => {
           // TODO check uid && gen. token
           console.info("NTLM-User: " + req["UID"]);
-          let logintoken = "aabbccddeeff";
+          const logintoken = "aabbccddeeff";
           res.send("let LOGIN_TOKEN = '" + logintoken + "';");
         });
 
@@ -121,7 +121,7 @@ export class SessionAPI implements RestApi {
 
   private checkPath(req: express.Request): boolean {
     // Pfad ohne Anmeldung?
-    let rc: boolean = this.noLogonPaths.some(e => req.path.indexOf(e) === 0);  // starts with
+    let rc: boolean = this.noLogonPaths.some( (e) => req.path.indexOf(e) === 0);  // starts with
 
     // ansonsten: token?
     if (!rc && req.header("x-login-token")) {

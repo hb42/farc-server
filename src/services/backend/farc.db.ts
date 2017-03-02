@@ -5,10 +5,11 @@
 import * as mongoose from "mongoose";
 
 import {
+    FarcConfigDocument,
     FarcDriveDocument,
     FarcEndpunktDocument,
     FarcEntryDocument,
-    FarcTreeDocument,
+    FarcOeDocument,
     FarcUserDocument,
 } from "@hb42/lib-farc";
 import {
@@ -16,20 +17,22 @@ import {
 } from "@hb42/lib-server";
 
 import {
+  farcConfigSchema,
   farcDriveSchema,
   farcEndpunktSchema,
   farcEntrySchema,
-  farcTreeSchema,
-  farUserSchema,
-} from "../model";
+  farcOeSchema,
+  farcUserSchema,
+} from "../../model";
 
 export class FarcDB {
 
   private db: MongoDB;
+  private farcConfigMod: mongoose.Model<FarcConfigDocument>;
   private farcDriveMod: mongoose.Model<FarcDriveDocument>;
   private farcEndpunktMod: mongoose.Model<FarcEndpunktDocument>;
   private farcEntryMod: mongoose.Model<FarcEntryDocument>;
-  private farcTreeMod: mongoose.Model<FarcTreeDocument>;
+  private farcOeMod: mongoose.Model<FarcOeDocument>;
   private farcUserMod: mongoose.Model<FarcUserDocument>;
 
   constructor(server: string, db: string, port: number, cred: any) {
@@ -41,6 +44,9 @@ export class FarcDB {
   public get mongo(): MongoDB {
     return this.db;
   }
+  public get farcConfigModel(): mongoose.Model<FarcConfigDocument> {
+    return this.farcConfigMod;
+  }
   public get farcDriveModel(): mongoose.Model<FarcDriveDocument> {
     return this.farcDriveMod;
   }
@@ -50,14 +56,17 @@ export class FarcDB {
   public get farcEntryModel(): mongoose.Model<FarcEntryDocument> {
     return this.farcEntryMod;
   }
-  public get farcTreeModel(): mongoose.Model<FarcTreeDocument> {
-    return this.farcTreeMod;
+  public get farcOeModel(): mongoose.Model<FarcOeDocument> {
+    return this.farcOeMod;
   }
   public get farcUserModel(): mongoose.Model<FarcUserDocument> {
     return this.farcUserMod;
   }
 
   private makeModels() {
+    this.farcConfigMod = this.db.getConnection()
+                        .model<FarcConfigDocument>("CONFIG", farcConfigSchema, "farc_config");
+
     this.farcDriveMod = this.db.getConnection()
                         .model<FarcDriveDocument>("DRIVE", farcDriveSchema, "farc_drive");
 
@@ -67,11 +76,11 @@ export class FarcDB {
     this.farcEntryMod = this.db.getConnection()
                         .model<FarcEntryDocument>("ENTRY", farcEntrySchema, "farc_entry");
 
-    this.farcTreeMod = this.db.getConnection()
-                       .model<FarcTreeDocument>("TREE", farcTreeSchema, "farc_tree");
+    this.farcOeMod = this.db.getConnection()
+                       .model<FarcOeDocument>("OE", farcOeSchema, "farc_oe");
 
     this.farcUserMod = this.db.getConnection()
-                       .model<FarcUserDocument>("USER", farUserSchema, "farc_user");
+                       .model<FarcUserDocument>("USER", farcUserSchema, "farc_user");
   }
 
 }

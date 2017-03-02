@@ -8,6 +8,7 @@ import { fs } from "mz";
 import * as path from "path";
 
 import {
+  ARCHIVE_NAME,
   FarcDriveDocument,
   FarcEndpunktDocument,
   FarcEntry,
@@ -18,7 +19,7 @@ import {
 
 import {
   FarcDB,
-} from "./";
+} from "../backend";
 
 interface DrvEP {
   drive: FarcDriveDocument;
@@ -50,11 +51,11 @@ export class FarcFilesystem {
     this.records = 0;
     this.ID = 10000;   // TODO key f. EPs ab 0 generieren
     // alle EP synchron holen
-    let drveplist: DrvEP[] = await this.getEPlist();
-    drveplist.forEach( obj => {
-      obj.eps.forEach( ep => {
+    const drveplist: DrvEP[] = await this.getEPlist();
+    drveplist.forEach( (obj) => {
+      obj.eps.forEach( (ep) => {
         console.info("readEPSync " + ep.endpunkt);
-        this.readEp(obj.drive, ep);
+        this.readEps(obj.drive, ep);
       });
     });
   }
@@ -63,14 +64,14 @@ export class FarcFilesystem {
   // XXX Test Einlesen
   public getDirs() {
     this.startRead = Date.now();
-    this.db.farcEndpunktModel.find({}, err2 => { ; })
+    this.db.farcEndpunktModel.find({}, (err2) => { ; })
         .exec((err3: Error, result: FarcEndpunktDocument[]) => {
           if (err3) {
             console.error("db error " + err3);
           } else {
             // console.info(result);
             console.info("found " + result.length + " EPs");
-            result.forEach(ep => {
+            result.forEach( (ep) => {
               this.getdirentries(ep._id);
             });
           }
@@ -91,14 +92,14 @@ export class FarcFilesystem {
 
   private getEPlist(): Promise<DrvEP[]> {
     return this.db.farcEntryModel.find().remove()  // alte EPs loeschen
-        .then( r => this.db.farcDriveModel.find().exec() )   // alle Laufwerke
+        .then( (r) => this.db.farcDriveModel.find().exec() )   // alle Laufwerke
         .then( (drvs: FarcDriveDocument[]) => {
           return drvs.map( (drv: FarcDriveDocument) => { // EPs je Laufwerk
-            return this.db.farcEndpunktModel.find({drive: drv.id}).exec().then( (eplist: FarcEndpunktDocument[]) => {
+            return this.db.farcEndpunktModel.find({drive: drv._id}).exec().then( (eplist: FarcEndpunktDocument[]) => {
               return {drive: drv, eps: eplist};
             });
           });
-        }).then( (promiselist: Promise<DrvEP>[]) => {
+        }).then( (promiselist: Array<Promise<DrvEP>>) => {
           return Promise.all(promiselist);
         })
         .catch( (err) => {
@@ -108,28 +109,34 @@ export class FarcFilesystem {
   }
 
   /**
-   * Endpunkt einlesen
+   * Endpunkt einlesen (source + archive)
    *
    * @param endpunkt - Endpunkt-Dokument
    */
-  private async readEp(drive: FarcDriveDocument, endpunkt: FarcEndpunktDocument) {
-    let epPath: string = [drive.sourcepath].concat(endpunkt.above).concat(endpunkt.endpunkt).join("/");
+  private async readEps(drive: FarcDriveDocument, endpunkt: FarcEndpunktDocument) {
+    let epPath: string = drive.sourcepath + "/" + endpunkt.above + "/" + endpunkt.endpunkt;
+    this.readEP(endpunkt, false, epPath, drive.displayname);
+    epPath = drive.archivepath + "/" + endpunkt.above + "/" + endpunkt.endpunkt;
+    this.readEP(endpunkt, true, epPath, ARCHIVE_NAME + drive.displayname);
+  }
 
+  private readEP(endpunkt: FarcEndpunktDocument, archive: boolean, epPath: string, drivename: string) {
     // Startknoten fuer den Baum
     // let root = new farcEntryModel({
-    let root: FarcEntry = {
-      parent    : endpunkt.key,
-      key       : this.ID++,
+    const above: string[] = endpunkt.above ? endpunkt.above.split("/") : [];
+    const root: FarcEntry = {
+      parent    : endpunkt._id,
+      key       : "" + this.ID++,
       label     : endpunkt.endpunkt,
       timestamp: null,
       size     : 0,
       type     : FarcEntryTypes.ep,
-      arc      : drive.arc,
-      path     : [drive.displayname].concat(endpunkt.above).concat(endpunkt.endpunkt),
+      arc      : archive,
+      path     : [drivename, ...above, endpunkt.endpunkt],
       leaf     : true,
       selected : FarcSelectType.none,
     };
-    let entries: FarcEntry[] = this.walk(epPath, root);
+    const entries: FarcEntry[] = this.walk(epPath, root);
     entries.push(root);
     this.records += entries.length;
     this.epcount--;
@@ -143,7 +150,7 @@ export class FarcFilesystem {
     // Wenn das Speichern direkt ueber den mongodb driver laeuft (farcEntryModel.collection...) ist
     // das mehr als genug, mongoose wuerde fuer farcEntryModel.insertMany ggf. auch das noch ueberschreiten.
     try {
-      this.db.farcEntryModel.collection.insertMany(entries).then( rc => {
+      this.db.farcEntryModel.collection.insertMany(entries).then( (rc) => {
         console.info("insertMany t=" + (Date.now() - this.startRead) + " #" + rc.insertedCount);
       });
     } catch (exc) {
@@ -171,16 +178,16 @@ export class FarcFilesystem {
     } catch (e) {
       list = [];
     }
-    list.forEach(filename => {
-      let entry = path.resolve(dir, filename);
+    list.forEach( (filename) => {
+      const entry = path.resolve(dir, filename);
       try {
-        let stat = fs.lstatSync(entry);
+        const stat = fs.lstatSync(entry);
         if (stat.isDirectory()) {
           // parent ist kein Leaf
           leaf = false;
-          let directory: FarcEntry = {
+          const directory: FarcEntry = {
             parent   : parent.key,
-            key      : this.ID++,
+            key      : "" + this.ID++,
             label    : filename,
             timestamp: stat.mtime.getTime(),  // als mili speichern
             size     : 0,
@@ -195,9 +202,9 @@ export class FarcFilesystem {
           entries = entries.concat(this.walk(entry, directory));
           sum += directory.size;
         } else {
-          let file: FarcEntry = {
+          const file: FarcEntry = {
             parent   : parent.key,
-            key      : this.ID++,
+            key      : "" + this.ID++,
             label    : filename,
             timestamp: stat.mtime.getTime(),
             size     : stat.size,
