@@ -9,13 +9,13 @@ import * as fs from "fs";
 // } from "mongoose";
 
 import {
-    FarcUser,
-    FarcUserDocument,
-} from "@hb42/lib-farc";
-
-import {
     FarcDB,
 } from "../services";
+import {
+  FarcOeDocument,
+  FarcUser,
+  FarcUserDocument,
+} from "../shared/ext";
 
 /* query
    NICHT IN: let uids= []; uids.push("..") ... -> { "uid" : { $nin: uids } }
@@ -67,7 +67,7 @@ export class FarcUserDAO {
                                            {new: true} ).exec();
   }
 
-  public find(condition: Object): Promise<FarcUserDocument[]> {
+  public find(condition: object): Promise<FarcUserDocument[]> {
     return this.db.farcUserModel.find(condition).exec();
   }
 
@@ -77,6 +77,13 @@ export class FarcUserDAO {
 
   public delete(user: FarcUserDocument): Promise<any> {  // { result: { ok: 1, n: 1 }, connection: ..
     return this.db.farcUserModel.remove({_id: user._id}).exec();
+  }
+
+  public getOe(uid: string): Promise<FarcOeDocument> {
+    return this.db.farcEndpunktModel.findOne({endpunkt: uid.toUpperCase()}).exec()
+        .then( (ep) => {
+          return this.db.farcOeModel.findById(ep.oe).exec();
+        });
   }
 
   // DEBUG

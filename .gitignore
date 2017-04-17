@@ -1,0 +1,17 @@
+# node
+/node_modules
+
+# IDE
+/.idea
+
+# build
+/dist
+/src/**/*.js
+
+# logs, internal files
+*.zip
+*.log
+/div
+
+# os
+.DS_STORE

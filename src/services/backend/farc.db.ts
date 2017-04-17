@@ -5,18 +5,6 @@
 import * as mongoose from "mongoose";
 
 import {
-    FarcConfigDocument,
-    FarcDriveDocument,
-    FarcEndpunktDocument,
-    FarcEntryDocument,
-    FarcOeDocument,
-    FarcUserDocument,
-} from "@hb42/lib-farc";
-import {
-  MongoDB,
-} from "@hb42/lib-server";
-
-import {
   farcConfigSchema,
   farcDriveSchema,
   farcEndpunktSchema,
@@ -24,6 +12,15 @@ import {
   farcOeSchema,
   farcUserSchema,
 } from "../../model";
+import {
+  FarcConfigDocument,
+  FarcDriveDocument,
+  FarcEndpunktDocument,
+  FarcEntryDocument,
+  FarcOeDocument,
+  FarcUserDocument,
+  MongoDB,
+} from "../../shared/ext";
 
 export class FarcDB {
 

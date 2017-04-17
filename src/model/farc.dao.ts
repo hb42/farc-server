@@ -3,12 +3,11 @@
  */
 
 import {
-    FarcEndpunktDocument,
-} from "@hb42/lib-farc";
-
-import {
   FarcDB,
 } from "../services";
+import {
+    FarcEndpunktDocument,
+} from "../shared/ext";
 
 // let Schema = mongoose.Schema;
 // let ObjectId = Schema.Types.ObjectId;

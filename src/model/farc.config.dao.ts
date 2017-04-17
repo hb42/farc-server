@@ -3,13 +3,12 @@
  */
 
 import {
-  FarcConfig,
-  FarcConfigDocument,
-} from "@hb42/lib-farc";
-
-import {
   FarcDB,
 } from "../services";
+import {
+  FarcConfig,
+  FarcConfigDocument,
+} from "../shared/ext";
 
 export class FarcConfigDAO {
 
@@ -18,28 +17,27 @@ export class FarcConfigDAO {
   }
 
   public findConfig(confName: string): Promise<any> {
-    // empty result -> null (kein error)
-    return this.db.farcConfigModel.findOne({name: confName}).exec()
-        .then( (conf) => {
-          if (conf !== null && conf !== undefined ) {
-            return conf.value;
-          } else {
-            return null;
-          }
-        });
+    return this.findConf(confName).then( (conf) => {
+      if (conf) {
+        return conf.value;
+      } else {
+        return null;
+      }
+    });
   }
 
   public updateConfig(confName: string, newValue: any): Promise<FarcConfigDocument> {
-    return this.findConfig(confName).then( (val) => {
+    return this.findConf(confName).then( (val: FarcConfigDocument) => {
       if (val) {
-        return this.db.farcConfigModel.findOneAndUpdate({name: confName}, { value: newValue }, {new: true} ).exec();
+        val.value = newValue;
+        return val.save();
       } else {
         return this.create({name: confName, value: newValue});
       }
     });
   }
 
-  public find(condition: Object): Promise<FarcConfigDocument[]> {
+  public find(condition: object): Promise<FarcConfigDocument[]> {
     return this.db.farcConfigModel.find(condition).exec();
   }
 
@@ -49,6 +47,18 @@ export class FarcConfigDAO {
 
   public delete(confName: string): Promise<any> {  // { result: { ok: 1, n: 1 }, connection: ..
     return this.db.farcConfigModel.remove({name: confName}).exec();
+  }
+
+  private findConf(confName: string): Promise<FarcConfigDocument> {
+    // empty result -> null (kein error)
+    return this.db.farcConfigModel.findOne({name: confName}).exec()
+        .then( (conf) => {
+          if (conf !== null && conf !== undefined ) {
+            return conf;
+          } else {
+            return null;
+          }
+        });
   }
 
 }

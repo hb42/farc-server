@@ -4,9 +4,13 @@
  * Created by hb on 04.09.16.
  */
 
-import { fs } from "mz";
+// import { fs } from "mz";
+import * as fs from "fs";
 import * as path from "path";
 
+import {
+  DataEventEmitter,
+} from ".";
 import {
   ARCHIVE_NAME,
   FarcDriveDocument,
@@ -15,8 +19,8 @@ import {
   FarcEntryDocument,
   FarcEntryTypes,
   FarcSelectType,
-} from "@hb42/lib-farc";
-
+  LoggerService,
+} from "../../shared/ext";
 import {
   FarcDB,
 } from "../backend";
@@ -28,82 +32,95 @@ interface DrvEP {
 
 export class FarcFilesystem {
 
-  private startRead: number;  // DEBUG
+  private log = LoggerService.get("farc-server.services.data.FarcFilesystem");
   private epcount: number;
   private records: number;
 
   private ID: number;
 
-  constructor(private db: FarcDB) {
+  constructor(private eventHandler: DataEventEmitter, private db: FarcDB) {
     //
   }
-
-  // TODO drive new/change/del
-  // TODO ep new/change/del -> class
 
   /**
    * Endpunkte einlesen
    */
   public async read() {
-    this.startRead = Date.now();  // DEBUG
-
-    this.epcount = 400; // TODO berechnen
     this.records = 0;
-    this.ID = 10000;   // TODO key f. EPs ab 0 generieren
+    this.ID = 10000;
     // alle EP synchron holen
     const drveplist: DrvEP[] = await this.getEPlist();
-    drveplist.forEach( (obj) => {
-      obj.eps.forEach( (ep) => {
-        console.info("readEPSync " + ep.endpunkt);
-        this.readEps(obj.drive, ep);
+    this.epcount = 0;
+    drveplist.forEach( (d) => this.epcount += d.eps.length);
+    this.epcount *= 2;
+
+    let readPromises: Array<Promise<boolean>> = [];
+    drveplist.forEach( (drvep) => {
+      drvep.eps.forEach( (ep) => {
+        const epp = this.readEps(drvep.drive, ep);
+        readPromises = [...readPromises, ...epp];
       });
+    });
+    Promise.all(readPromises).then( (rc: boolean[]) => {
+      const result: boolean = rc.reduce( (a, b) => a && b );
+      this.log.info("END readEps result=" + result);
+      if (result) {
+        this.eventHandler.emit(this.eventHandler.evtReadFsReady);
+        // DEBUG
+        // this.testEps();
+      } else {
+        this.log.error("Fehler beim Eintragen der Entries in die DB. Siehe Log.");
+        // TODO errorEvent?
+      }
     });
   }
 
-  // ############ TEST
-  // XXX Test Einlesen
-  public getDirs() {
-    this.startRead = Date.now();
-    this.db.farcEndpunktModel.find({}, (err2) => { ; })
-        .exec((err3: Error, result: FarcEndpunktDocument[]) => {
-          if (err3) {
-            console.error("db error " + err3);
-          } else {
-            // console.info(result);
-            console.info("found " + result.length + " EPs");
-            result.forEach( (ep) => {
-              this.getdirentries(ep._id);
-            });
-          }
-        });
-  }
-  // ######### TEST
-  public getdirentries(id) {
-    this.db.farcEntryModel.find({parent: id}).exec().then( (res: FarcEntryDocument[]) => {
+  // ---- DEBUG ----
+  private getdirentries(key) {
+    this.db.farcEntryModel.find({parent: key}).exec().then((res: FarcEntryDocument[]) => {
       res.forEach((item: FarcEntryDocument) => {
         if (item.type !== FarcEntryTypes.file) {
-          console.info((Date.now() - this.startRead) + "  " + FarcEntryTypes[item.type] + " " + item.leaf + " "
-                       + item.label + " (" + item.path.join("/") + ")");
-          this.getdirentries(item._id);
+          console.info(FarcEntryTypes[item.type]  
+                       + " " + item.path.join("/"));
+          this.getdirentries(item.key);
         }
       });
     });
   }
 
-  private getEPlist(): Promise<DrvEP[]> {
-    return this.db.farcEntryModel.find().remove()  // alte EPs loeschen
-        .then( (r) => this.db.farcDriveModel.find().exec() )   // alle Laufwerke
-        .then( (drvs: FarcDriveDocument[]) => {
-          return drvs.map( (drv: FarcDriveDocument) => { // EPs je Laufwerk
-            return this.db.farcEndpunktModel.find({drive: drv._id}).exec().then( (eplist: FarcEndpunktDocument[]) => {
-              return {drive: drv, eps: eplist};
-            });
+  private testEps() {
+    this.db.farcEndpunktModel.find().exec()
+        .then((result: FarcEndpunktDocument[]) => {
+          // console.info(result);
+          console.info("found " + result.length + " EPs");
+          result.sort((a, b) => (a.drive + a.above + a.endpunkt).localeCompare(b.drive + b.above + b.endpunkt));
+          result.forEach((ep) => {
+            // console.info("EP " + ep.drive + " " + ep.above + "/" + ep.endpunkt);
+            this.getdirentries(ep._id.toString());
           });
-        }).then( (promiselist: Array<Promise<DrvEP>>) => {
-          return Promise.all(promiselist);
-        })
+        });
+  }
+  // ---- ----
+
+  /**
+   * Entries loeschen und Liste aus [Lauferk, Endpunkt[]] holen
+   *
+   * @returns {Promise<DrvEP[]>}
+   */
+  private getEPlist(): Promise<DrvEP[]> {
+
+    return this.db.farcEntryModel.collection.drop()  // drop() ist schneller als .remove({})
+        .then( (drop) => this.db.farcEntryModel.collection.createIndex("key", {unique: true }) )  // neuer index
+        .then( (ci1) => this.db.farcEntryModel.collection.createIndex("parent") )  // neuer index
+        .then( (ci2) => this.db.farcEntryModel.collection.createIndex("selected") )  // neuer index
+        .then( (ci3) => this.db.farcDriveModel.find().exec() )  // alle Laufwerke
+        .then( (drvs: FarcDriveDocument[]) =>
+          drvs.map((drv: FarcDriveDocument) =>
+            this.db.farcEndpunktModel.find({drive: drv._id}).exec() // EPs je Laufwerk
+                .then( (eplist: FarcEndpunktDocument[]) => ({drive: drv, eps: eplist}) ) ) )
+        .then( (promiselist: Array<Promise<DrvEP>>) => Promise.all(promiselist) )
         .catch( (err) => {
-          console.info("Fehler beim Einlesen: " + err);
+          this.log.error("Fehler beim Einlesen der Endpunkte aus der DB: " + err);
         });
 
   }
@@ -113,26 +130,30 @@ export class FarcFilesystem {
    *
    * @param endpunkt - Endpunkt-Dokument
    */
-  private async readEps(drive: FarcDriveDocument, endpunkt: FarcEndpunktDocument) {
-    let epPath: string = drive.sourcepath + "/" + endpunkt.above + "/" + endpunkt.endpunkt;
-    this.readEP(endpunkt, false, epPath, drive.displayname);
-    epPath = drive.archivepath + "/" + endpunkt.above + "/" + endpunkt.endpunkt;
-    this.readEP(endpunkt, true, epPath, ARCHIVE_NAME + drive.displayname);
+  private readEps(drive: FarcDriveDocument, endpunkt: FarcEndpunktDocument): Array<Promise<boolean>> {
+    let epPath: string = drive.sourcepath
+        + (endpunkt.above ? "/" + endpunkt.above : "")
+        + "/" + endpunkt.endpunkt;
+    const pSrc: Promise<boolean> = this.readEP(endpunkt, false, epPath, drive.displayname);
+    epPath = drive.archivepath
+        + (endpunkt.above ? "/" + endpunkt.above : "")
+        + "/" + endpunkt.endpunkt;
+    const pArc: Promise<boolean> = this.readEP(endpunkt, true, epPath, ARCHIVE_NAME + drive.displayname);
+    return [pSrc, pArc];
   }
 
-  private readEP(endpunkt: FarcEndpunktDocument, archive: boolean, epPath: string, drivename: string) {
-    // Startknoten fuer den Baum
-    // let root = new farcEntryModel({
-    const above: string[] = endpunkt.above ? endpunkt.above.split("/") : [];
+  private readEP(ep: FarcEndpunktDocument, archive: boolean, epPath: string, drivename: string): Promise<boolean> {
+    this.log.info("reading " + epPath + " ...");
+    const above: string[] = ep.above ? ep.above.split("/") : [];
     const root: FarcEntry = {
-      parent    : endpunkt._id,
+      parent    : ep._id.toString(),
       key       : "" + this.ID++,
-      label     : endpunkt.endpunkt,
+      label     : ep.endpunkt,
       timestamp: null,
       size     : 0,
       type     : FarcEntryTypes.ep,
       arc      : archive,
-      path     : [drivename, ...above, endpunkt.endpunkt],
+      path     : [drivename, ...above, ep.endpunkt],
       leaf     : true,
       selected : FarcSelectType.none,
     };
@@ -140,22 +161,24 @@ export class FarcFilesystem {
     entries.push(root);
     this.records += entries.length;
     this.epcount--;
-    console.info(epPath + " #sum " + root.size);
-    console.info("milis reading=" + (Date.now() - this.startRead) + " remaining: " + this.epcount
-                 + " entries=" + entries.length + " db-count=" + this.records); // DEBUG
+    this.log.debug("sum=" + root.size + " entries=" + entries.length + " remaining=" + this.epcount
+                   + " db-count=" + this.records);
 
     // Das Speichern in der DB passiert erst, wenn die Einlese-Schleife durch ist, da hilft auch alle
-    // Trickserei mit await nichts. Fuers Speichern braucht die node-Instanz dann sehr viel Speicher.
-    // Deshalb node mit --max_old_space_size=32000 starten, das erlaubt node bis zu 32GB zu verwenden.
+    // Trickserei mit await nichts. Fuers Speichern braucht die node-Instanz dann viel Speicher.
+    // Deshalb node mit --max_old_space_size=8000 starten, das erlaubt node bis zu 8GB zu verwenden.
     // Wenn das Speichern direkt ueber den mongodb driver laeuft (farcEntryModel.collection...) ist
-    // das mehr als genug, mongoose wuerde fuer farcEntryModel.insertMany ggf. auch das noch ueberschreiten.
-    try {
-      this.db.farcEntryModel.collection.insertMany(entries).then( (rc) => {
-        console.info("insertMany t=" + (Date.now() - this.startRead) + " #" + rc.insertedCount);
-      });
-    } catch (exc) {
-      console.info("insert exception " + exc);
-    }
+    // das mehr als genug, mongoose wuerde fuer farcEntryModel.insertMany 32GB oder mehr brauchen.
+
+    return this.db.farcEntryModel.collection.insertMany(entries)
+        .then( (rc) => {
+          this.log.debug("insertMany count: " + rc.insertedCount);
+          return true;
+        })
+        .catch( (exc) => {
+          this.log.error("insert exception " + exc);
+          return false;
+        });
   }
 
   /**
@@ -217,7 +240,7 @@ export class FarcFilesystem {
           sum += file.size;
         }
       } catch (e) {
-        console.error("lstat-Fehler " + entry);
+        this.log.error("lstat-Fehler in walk() fuer " + entry);
       }
     });
     parent.size = sum;

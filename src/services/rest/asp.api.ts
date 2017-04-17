@@ -8,10 +8,8 @@ import * as request from "request";
 
 import {
     authURL,
-} from "@hb42/lib-common";
-import {
     RestApi,
-} from "@hb42/lib-server";
+} from "../../shared/ext";
 
 /**
  * Pseudo IIS
@@ -21,6 +19,9 @@ import {
  *
  */
 export class AspAPI implements RestApi {
+  public get path(): string {
+    return "/asp";
+  }
   private fakeUser: string;
   // { app1: { server: "http://server:port", url: "/ntlmlogin"}, }
   private services: any;

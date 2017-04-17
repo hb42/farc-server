@@ -12,4 +12,7 @@ export class DataEventEmitter extends EventEmitter {
   public evtReadAdEps = "readAdEps";
   public evtReadAdRoles = "readAdRoles";
 
+  public evtReadDataReady = "readDataReady";
+  public evtReadFsReady = "evtReadFsReady";
+
 }

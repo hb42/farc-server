@@ -55,7 +55,7 @@ module.exports = function(env) {
   var ENV = process.env.NODE_ENV = process.env.ENV = release ? 'production' : 'development';
 // Testserver
   var HOST = process.env.HOST || 'localhost';
-  var PORT = process.env.PORT || 23000;
+  var PORT = process.env.PORT || 23100;
 
 // Pfade/Dateinamen
   var cwd = process.cwd();
@@ -213,12 +213,14 @@ module.exports = function(env) {
           //exclude: [ /\.(spec|e2e)\.ts$/ ]
         },
 
-        {test: /\.(png|jpg|gif)$/, loader: "url-loader?limit=50000&name=[path][name].[ext]"},
-        {test: /\.json$/, loader: 'json'},
+        { test: /\.(png|jpg|gif)$/,
+          loader: "url-loader?limit=50000&name=[path][name].[ext]"},
+        { test: /\.json$/,
+          loader: 'json'},
         {
           test: /^(?!.*\.min\.css$).*\.css$/, loader: ExtractTextPlugin.extract({
-                                                                                  fallbackLoader: "style-loader",
-                                                                                  loader        : "css-loader?sourceMap"
+                                                                                  fallback: "style-loader",
+                                                                                  use  : "css-loader?sourceMap"
                                                                                 })
         },
         // { test: /\.scss$/, loaders: ['style-loader',
@@ -236,7 +238,7 @@ module.exports = function(env) {
 //       { test: /\.html$/, loader: "file-loader?name=error.html!" + "src" + "/error.html", exclude: [ index_html ] },
         // w/ font awesome-loader + bootstrap-loader
         {test   : /\.woff(2)?(\?v=[0-9]\.[0-9]\.[0-9])?$/,
-          loader: "url-loader?limit=10000&minetype=application/font-woff"
+         loader: "url-loader?limit=10000&minetype=application/font-woff"
         },
         {test: /\.(ttf|eot|svg)(\?v=[0-9]\.[0-9]\.[0-9])?$/, loader: "file-loader"}
 

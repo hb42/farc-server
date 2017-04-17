@@ -5,16 +5,17 @@
 import * as express from "express";
 
 import {
-  confUSER,
-  FarcDriveDocument,
-  FarcOeDocument,
-  FarcTreeNode,
-} from "@hb42/lib-farc";
-import { RestApi } from "@hb42/lib-server";
-
-import {
   FarcConfigDAO,
 } from "../../model";
+import {
+  confUSER,
+  FarcDriveDocument,
+  FarcEndpunktDocument,
+  FarcOeDocument,
+  FarcTreeNode,
+  LoggerService,
+  RestApi,
+} from "../../shared/ext";
 import {
   FarcDB,
 } from "../backend";
@@ -27,21 +28,26 @@ import {
  * REST-API fuer farc
  */
 export class FarcAPI implements RestApi {
+
+  public get path(): string {
+    return "/farc";
+  }
   private farcTree: FarcTree;
   private debug: boolean;
   private configDAO: FarcConfigDAO;
+  private log = LoggerService.get("farc-server.services.rest.FarcAPI");
 
   constructor(private db: FarcDB) {
     this.farcTree = new FarcTree(db);
     // this.initRoutes(router);
     this.configDAO = new FarcConfigDAO(db);
-
+    this.log.debug("c'tor FarcAPI");
   }
 
   public setDebug(dbg: boolean) {
-    this.debug = dbg;      
+    this.debug = dbg;
   }
-  
+
   public initRoute(router: express.Router) {
     console.info("farc.api init router");
     // DEBUG
@@ -126,13 +132,13 @@ export class FarcAPI implements RestApi {
     //
     //     });
 
-    router.route("/readtree")
-        .get((req: express.Request, res: express.Response) => {
-          const fs: FarcFilesystem = new FarcFilesystem(this.db);
-          fs.read();
-          res.json("read dirs running...");
-           // TODO refresh browser
-        });
+    // router.route("/readtree")
+    //     .get((req: express.Request, res: express.Response) => {
+    //       const fs: FarcFilesystem = new FarcFilesystem(this.db);
+    //       fs.read();
+    //       res.json("read dirs running...");
+    //        // TODO refresh browser
+    //     });
 
     // --- Config ---
     //
@@ -140,7 +146,7 @@ export class FarcAPI implements RestApi {
         .all((req: express.Request, res: express.Response, next) => {
           req["confName"] = req.params.conf_name;
           if (req["confName"] === confUSER) {
-            req["confName"] = req["session"]["user"]["uid"];
+            req["confName"] = req["session"]["user"]["u"]["uid"];
           }
           next();
         })
@@ -153,6 +159,13 @@ export class FarcAPI implements RestApi {
         })
         .delete((req: express.Request, res: express.Response) => {
           this.configDAO.delete(req["confName"]).then( (rc) => res.json(rc) );
+        });
+
+    // --- isAdmin ---
+    //
+    router.route("/isadmin")
+        .get((req: express.Request, res: express.Response) => {
+          res.json({isadmin: req["session"]["user"]["admin"]});
         });
 
     // --- Drive ---
@@ -269,6 +282,33 @@ export class FarcAPI implements RestApi {
                 res.json(err);
               });
         });
+
+    // --- Endpunkt ---
+    //
+    router.route("/eps")
+        .get((req: express.Request, res: express.Response) => {
+          this.db.farcEndpunktModel.find().exec()
+              .then((eps: FarcEndpunktDocument[]) => res.json(eps));
+        })
+        .post((req: express.Request, res: express.Response) => {
+          const ep: FarcEndpunktDocument = req.body.endpunkt;
+          const oe = req.body.oe;
+          this.db.farcEndpunktModel.findById(ep._id).exec()
+              .then( (epRec) => {
+                epRec.oe = oe;
+                epRec.save()
+                    .then( (rc) => {  // rc == geaenderter EP
+                      console.info("EP saved " + rc);
+                      res.json(rc);
+                    })
+                    .catch( (err) => {
+                      console.error("error updating EP " + ep.above + " " + ep.endpunkt);
+                      res.json(err);
+                    });
+              });
+
+        });
+
   }
 
 }

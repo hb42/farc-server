@@ -1,5 +1,7 @@
 {
   "mongodbServer": "localhost",
   "mongodbDB": "farc",
-  "mongodbPort": 27017
+  "mongodbPort": 27017,
+  "webapp": "http://5.77.32.210:23000",
+  "adminrole": "791-IT-Service-Basis"
 }

@@ -7,8 +7,7 @@ import * as ldap from "ldapjs";
 import {
   ldapAdmin,
   ldapPwd,
-} from "@hb42/lib-passwd";
-
+} from "../../shared/ext";
 import {
   DataEventEmitter,
 } from "../data";

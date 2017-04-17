@@ -3,38 +3,29 @@
  */
 
 import {
-  FarcUserDocument,
-} from "@hb42/lib-farc";
-import {
-  UserCheck,
-} from "@hb42/lib-server";
-
-import {
-  FarcConfigDAO,
   FarcUserDAO,
 } from "../model";
+import {
+  FarcOeDocument,
+  FarcUserDocument,
+  UserCheck,
+} from "../shared/ext";
 import {
   FarcDB,
 } from "./backend";
 
 export class FarcUserCheck implements UserCheck {
 
-  private sessionuser: FarcUserDocument;
-  private sessiondata: any = null;
+  private userDAO: FarcUserDAO;
 
-  private sessionDAO: FarcUserDAO;
-  private configDao: FarcConfigDAO;
-
-  private confName: string = "FARC_";
-
-  constructor(private db: FarcDB) {
-    this.sessionDAO = new FarcUserDAO(db);
-    this.configDao = new FarcConfigDAO(db);
+  constructor(private db: FarcDB, private admrole: string) {
+    this.userDAO = new FarcUserDAO(db);
   }
 
   /*
    check user/pwd
    returns canonical UID || null if error
+   => jeder User, der in der DB gefunden wird, ist gueltig
    */
   public authUser(uid: string, pwd?: string): Promise<string> {
     let user: string;
@@ -44,33 +35,28 @@ export class FarcUserCheck implements UserCheck {
     } else {
       user = uid.toUpperCase();
     }
-    return this.sessionDAO.findOne(user)
-        .then( (u: FarcUserDocument) => {
-          this.sessionuser = u;
-          this.confName += u.uid.toUpperCase();
-          this.configDao.findConfig(this.confName)
-              .then( (conf) => {
-                this.sessiondata = conf;
-              })
-          return u.uid;
-        })
-        .catch( (err) => {
-          console.error("error fetching user " + err);
-          return null;
-        });
+    return this.userDAO.findOne(user)
+        .then( (usr: FarcUserDocument) => usr ? usr.uid : null );
   }
 
   /*
    returns user data object
    */
-  public getUserData(): any {
-    return this.sessiondata;
-  }
-
-  // public setUserData(data: FarcUserDocument): Promise<any> {
-  public setUserData(session: any): Promise<any> {
-    this.sessiondata = session;
-    return this.configDao.updateConfig(this.confName, this.sessiondata);
+  public getUser(uid: string): Promise<any> {
+    return this.userDAO.findOne(uid)
+        .then( (usr: FarcUserDocument) => {
+          return this.userDAO.getOe(usr.uid)
+              .then( (useroe: FarcOeDocument) => {
+                const adm: boolean = -1 < usr.roles.findIndex( (dn) => {
+                      return dn.toLowerCase().includes(this.admrole.toLowerCase());
+                    });
+                return {u: usr, oe: useroe, admin: adm};
+              });
+        })
+        .catch( (err) => {
+          console.error("error fetching user " + err);
+          return null;
+        });
   }
 
 }

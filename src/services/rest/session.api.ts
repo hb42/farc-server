@@ -5,14 +5,17 @@
 import * as express from "express";
 // import * as session from "express-session";
 
-import { RestApi } from "@hb42/lib-server";
+import { RestApi } from "../../shared/ext";
 
 /**
- * Zentraler Webservice fuer das session handling
- *
+ *  NOT IN USE
+ *  Zentraler Webservice fuer das session handling
  *
  */
 export class SessionAPI implements RestApi {
+  public get path(): string {
+    return "/session";
+  }
   private debug: boolean;
 
   private noLogonPaths = [

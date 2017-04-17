@@ -13,24 +13,46 @@ import {
   FarcEntryDocument,
   FarcEntryTypes,
   FarcSelectType,
-  FarcSession,
   FarcTreeNode,
-} from "@hb42/lib-farc";
-
+  LoggerService,
+} from "../../shared/ext";
 import {
   FarcDB,
 } from "../backend";
+import {
+  FarcSession,
+} from "../rest";
 
 export class FarcTree {
 
+  private log = LoggerService.get("farc-server.services.data.FarcTree");
   private tree: FarcTreeNode[];  // Baum ab Drive bis EP (Rest holt Client bei Bedarf)
 
   constructor(private db: FarcDB) {
+    this.log.debug("start makeTrees");
     this.makeTrees().then( (tree) => {
       this.tree = tree;
+      this.log.debug("end makeTrees");
     });
   }
 
+  // DEBUG output
+  public debug() {
+      const pc = (node: FarcTreeNode, tab: string) => {
+        if (node.children) {
+          node.children.sort( (a: FarcTreeNode, b: FarcTreeNode) => a.label.localeCompare(b.label) );
+          node.children.forEach( (ch) => {
+            this.log.trace(tab + ch.label + " (" + ch.size + ")");
+            pc(ch, tab + "  ");
+          });
+        }
+      }
+      this.tree.forEach( (node: FarcTreeNode) => {
+        this.log.trace(node.label);
+        pc(node, "  ");
+      });
+
+  }
   /**
    * Baum ab Drive bis zu den EP zusammensetzen
    *
@@ -79,10 +101,12 @@ export class FarcTree {
     };
 
     return this.db.farcEndpunktModel.find({drive: drive._id}).exec().then((result) => {
-      result.forEach( (ep: FarcEndpunktDocument) => {
+      return Promise.all(result.map( (ep: FarcEndpunktDocument) => {
+        // this.log.trace(drivename + ": " + ep.above + "/" + ep.endpunkt)
         let node: FarcTreeNode = driveroot;
         // Pfad ab drive zum EP aufbauen
         const above: string[] = ep.above ? ep.above.split("/") : [];
+        above.push(ep.endpunkt);
         above.forEach( (dir) => {
           const ch: FarcTreeNode[] = node.children.filter( (n) => dir === n.label );
           if (ch && ch.length === 1) {
@@ -106,27 +130,22 @@ export class FarcTree {
             node = child;
           }
         });
-        this.db.farcEntryModel.findOne({parent: ep._id, arc: archive}).exec().then( (epEntry: FarcEntryDocument) => {
+        return this.db.farcEntryModel.findOne({parent: ep._id.toString(), arc: archive}).exec()
+            .then( (epEntry: FarcEntryDocument) => {
           if (epEntry) {
-            const epnode: FarcTreeNode = {
-              entryid  : epEntry.key,
-              label    : epEntry.label,
-              timestamp: epEntry.timestamp,
-              size     : epEntry.size,
-              children : null, // null => Client muss Daten holen, keine Daten == <FarcTreeNode[]> []
-              files    : null, // dto.
-              entrytype: FarcEntryTypes.ep,
-              arc      : epEntry.arc,
-              path     : epEntry.path, // node.path.concat(ep.endpunkt),
-              leaf     : epEntry.leaf,
-              selected : FarcSelectType.none,
-              type     : FarcEntryTypes[FarcEntryTypes.ep],
-            };
-            node.children.push(epnode);
+            // this.log.trace("ep " + epEntry.label + " " + epEntry.size);
+            node.entryid = epEntry.key;
+            node.timestamp = epEntry.timestamp;
+            node.size = epEntry.size;
+            node.children = null;
+            node.files = null;
+            node.entrytype = FarcEntryTypes.ep;
+            node.arc = epEntry.arc;
+            node.leaf = epEntry.leaf;
+            node.type = FarcEntryTypes[FarcEntryTypes.ep];
           }
         });
-      });
-      return driveroot;
+      }) ).then( () => driveroot);
     });
   }
 

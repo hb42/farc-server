@@ -15,17 +15,15 @@ import * as timers from "timers";
 import {
   FarcDrive,
   FarcDriveTypes,
-} from "@hb42/lib-farc";
-
-import {
+  FarcEndpunktDocument,
+  FarcEntryDocument,
+  FarcEntryTypes,
   farcPwd,
   farcUser,
-} from "@hb42/lib-passwd";
-import {
+  LoggerService,
   Webserver,
-} from "@hb42/lib-server";
+} from "./shared/ext";
 
-// import {FarcMockup} from "./farc.mockup";
 import {
   AspAPI,
   DataService,
@@ -35,17 +33,20 @@ import {
   FarcUserCheck,
 } from "./services";
 
-// import {
-//   FarcEntry,
-//   FarcEntryTypes,
-// } from "./common/farc/model";
-//
-// import {
-//   farcEntryModel,
-// } from "./model";
+import {isNumber} from "util";
+
+// Standard-Logfile
+LoggerService.init("../div/server.log");
+// LOG fuer Admin-Infos aus dem Einlesen anlegen
+const eplog = LoggerService.getFile("Endpunkte", "../div/endpunkte.log");
+// LOG fuer express (als param an Webserver uebergeben)
+const weblog = LoggerService.getWeb("webserver", "../div/web.log");
+// TODO console nur fuer dev?
+LoggerService.useConsole();
+const log = LoggerService.get("farc-server.main");
 
 // aus Webpack via DefinePlugin
-declare var WEBPACK_DATA;
+declare const WEBPACK_DATA;
 const metadata = WEBPACK_DATA.metadata;
 process.env.ENV = metadata.ENV;
 process.env.NODE_ENV = metadata.NODE_ENV;
@@ -69,44 +70,31 @@ const db = new FarcDB(config.mongodbServer, config.mongodbDB, config.mongodbPort
     { user: farcUser, pass: farcPwd } );
 
 // // FARC-Server starten
-const farcserver = new Webserver(metadata.PORT, "farc", new FarcUserCheck(db));
+const farcserver = new Webserver(metadata.PORT, "farc", weblog, new FarcUserCheck(db, config.adminrole));
 
 farcserver.setFaviconPath("./resource/favicon.ico");
-farcserver.addApi("/farc", new FarcAPI(db));
+farcserver.setCorsOptions({ origin: config.webapp, credentials: true });
+farcserver.addApi(new FarcAPI(db));
 farcserver.setDebug(true);
 farcserver.start();
 
 // wird nur gebraucht, wenn kein IIS vorhanden
 if (!metadata.SPK) {
 // fake IIS
-  const fakeIISserver = new Webserver(metadata.PORT + 42, "asp");
+  const fakeIISserver = new Webserver(metadata.PORT + 42, "asp", weblog);
   const asp = new AspAPI();
-  asp.setUser("v998dpve\\s0770001");
+  asp.setUser("v998dpve\\s0770007");
   asp.setWebservice({
-                      farc: {server: "http://localhost:23000", url: "/authenticate"},
+                      farc: {server: "http://localhost:23100", url: "/authenticate"},
                     });
   fakeIISserver.setDebug(true);
-  fakeIISserver.addApi("/asp", asp);
-  fakeIISserver.setCorsOptions({ origin: "http://localhost:23000", credentials: true });
+  fakeIISserver.addApi(asp);
+  fakeIISserver.setCorsOptions({ origin: config.webapp, credentials: true });
+  // fakeIISserver.setCorsOptions({ origin: "http://localhost:23000", credentials: true });
   fakeIISserver.setStaticContent(null);
 
   fakeIISserver.start();
 }
-
-// let items = []; // files, directories, symlinks, etc
-// fse.walk("/Users/hb/Workspaces/JavaScript")
-//     .on("data", (item) => {
-//       console.info(item.stats.isDirectory() + " " + item.path);
-//       items.push(item.path);
-//     })
-//     .on("end", () => {
-//       console.info("---");
-//       console.dir(items); // => [ ... array of files]
-//     });
-
-/* initialisieren */
-// let mo: FarcMockup = new FarcMockup();
-// mo.makeDrive(metadata.SPK).then( () => mo.readEPs() );
 
 /* user, etc. aus AD einlesen TODO als cron job konstruieren */
 timers.setTimeout( () => {
@@ -134,15 +122,48 @@ timers.setTimeout( () => {
 
   // Daten einlesen
   // const dataservice = new DataService(db, metadata.SPK);
-  // dataservice.readData();
+  // dataservice.readAll();
+
+/*        
+  // ---- DEBUG ----
+  const getdirentries = (key) => {
+    db.farcEntryModel.find({parent: key}).exec().then((res: FarcEntryDocument[]) => {
+      res.forEach((item: FarcEntryDocument) => {
+        if (item.type !== FarcEntryTypes.file) {
+          console.info(FarcEntryTypes[item.type]  
+                       + " " + item.path.join("/"));
+          getdirentries(item.key);
+        }
+      });
+    });
+  };
+
+  db.farcEndpunktModel.find().exec()
+      .then((result: FarcEndpunktDocument[]) => {
+          // console.info(result);
+        console.info("found " + result.length + " EPs");
+        result.sort((a, b) => (a.drive.toString() + a.above + a.endpunkt).
+                              localeCompare(b.drive.toString() + b.above + b.endpunkt));
+        result.forEach((ep) => {
+          getdirentries(ep._id.toString());
+        });
+      });
+
+  // ---- ----
+*/
 
 }, 5000); // 5 sec, damit vorher alles initalisiert ist
-/* */
 
-// let rd = new FarcFilesystem();
-//// rd.testdb();
-// rd.read();
-//// rd.getDirs();
+// let counter: number = 0;
+// timers.setInterval( () => {
+//   log.trace("trace " + ++counter);
+//   log.debug("debug " + counter);
+//   log.info("info " + counter);
+//   log.warn("warn " + counter);
+//   log.error("error " + counter);
+//   log.fatal("fatal " + counter);
+//   eplog.info("EP-Info " + counter);
+// }, 3000);
 
 // let testep = "Änd_V998DPVE\\E077\\Daten\\\\zz_allgemeine-Dateien\\intranet\\Test";
 // let pattern = /^.nd_V998DPVE(\\E077\\Daten)?\\{1,2}/i;
