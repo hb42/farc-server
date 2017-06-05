@@ -42,7 +42,7 @@ export class SessionAPI implements RestApi {
 
     router.use( (req: express.Request, res: express.Response, next) => {
       console.info("id=" + req["sessionID"]);
-      console.dir(req.session);
+      console.dir(req["session"]);
 
       if (req["session"]["active"]) {
         console.info("session active");

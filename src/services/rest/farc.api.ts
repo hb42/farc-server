@@ -114,7 +114,7 @@ export class FarcAPI implements RestApi {
     // Baum bis zu den EPs holen
     router.route("/tree")
         .get((req: express.Request, res: express.Response) => {
-          res.json(this.farcTree.getTree(req["session"] as any));
+          res.json(this.farcTree.getTree(this.getOE(req), this.getUID(req), this.isAdmin(req)));
         });
     // naechste Verzeichnisebene holen (req.body -> {entryid: id})
     router.route("/children")
@@ -126,19 +126,13 @@ export class FarcAPI implements RestApi {
         .post((req: express.Request, res: express.Response) => {
           this.farcTree.getFiles(req.body.entryid).then( (nodes: FarcTreeNode[]) => res.json(nodes));
         });
-    // router.route("/fulltree")
-    //     .get((req: express.Request, res: express.Response) => {
-    //       this.farcReadDir.makeTrees().then( tree => { res.json(tree); });
-    //
-    //     });
 
-    // router.route("/readtree")
-    //     .get((req: express.Request, res: express.Response) => {
-    //       const fs: FarcFilesystem = new FarcFilesystem(this.db);
-    //       fs.read();
-    //       res.json("read dirs running...");
-    //        // TODO refresh browser
-    //     });
+    // --- OE-List ---
+    //
+    router.route("/oelist")
+        .get((req: express.Request, res: express.Response) => {
+          res.json(this.farcTree.getOeList(this.getOE(req), this.isAdmin(req)));
+        });
 
     // --- Config ---
     //
@@ -146,7 +140,7 @@ export class FarcAPI implements RestApi {
         .all((req: express.Request, res: express.Response, next) => {
           req["confName"] = req.params.conf_name;
           if (req["confName"] === confUSER) {
-            req["confName"] = req["session"]["user"]["u"]["uid"];
+            req["confName"] = this.getUID(req);
           }
           next();
         })
@@ -161,11 +155,16 @@ export class FarcAPI implements RestApi {
           this.configDAO.delete(req["confName"]).then( (rc) => res.json(rc) );
         });
 
+    router.route("/whoami")
+        .get((req: express.Request, res: express.Response) => {
+          res.json({uid: this.getUID(req), name: req["session"]["user"]["u"]["name"],
+                    vorname: req["session"]["user"]["u"]["vorname"], mail: req["session"]["user"]["u"]["mail"]});
+        });
     // --- isAdmin ---
     //
     router.route("/isadmin")
         .get((req: express.Request, res: express.Response) => {
-          res.json({isadmin: req["session"]["user"]["admin"]});
+          res.json({isadmin: this.isAdmin(req)});
         });
 
     // --- Drive ---
@@ -309,6 +308,33 @@ export class FarcAPI implements RestApi {
 
         });
 
+    // --- Vormerkungen ---
+    //
+    router.route("/vormerkung")
+        .get((req: express.Request, res: express.Response) => {
+          const uid = this.isAdmin(req) ? null : this.getUID(req);
+          this.farcTree.getVormerkung(uid).then( (vor: FarcTreeNode[]) => {
+            res.json(vor);
+          });
+        })
+        .post((req: express.Request, res: express.Response) => {
+          const vor: FarcTreeNode[] = req.body;
+          this.farcTree.saveVormerkung(vor).then( (rc) => {
+            res.json(rc);
+          });
+        });
+  }
+
+  private isAdmin(req: express.Request): boolean {
+    return !!req["session"]["user"]["admin"];
+  }
+
+  private getUID(req: express.Request): string {
+    return req["session"]["user"]["u"]["uid"];
+  }
+
+  private getOE(req: express.Request): string {
+    return req["session"]["user"]["oe"]["name"];
   }
 
 }

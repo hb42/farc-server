@@ -72,7 +72,6 @@ const db = new FarcDB(config.mongodbServer, config.mongodbDB, config.mongodbPort
 // // FARC-Server starten
 const farcserver = new Webserver(metadata.PORT, "farc", weblog, new FarcUserCheck(db, config.adminrole));
 
-farcserver.setFaviconPath("./resource/favicon.ico");
 farcserver.setCorsOptions({ origin: config.webapp, credentials: true });
 farcserver.addApi(new FarcAPI(db));
 farcserver.setDebug(true);
@@ -94,6 +93,15 @@ if (!metadata.SPK) {
   fakeIISserver.setStaticContent(null);
 
   fakeIISserver.start();
+}
+
+// FARC-static Webapp-Server (nur fuer prod)
+if (metadata.ENV === "production") {
+  const staticserver = new Webserver(metadata.PORT - 100, "farc-static", weblog);
+  staticserver.setFaviconPath("./resource/favicon.ico");
+  staticserver.setStaticContent("./static");
+  staticserver.setStaticUrl("/");
+  staticserver.start();
 }
 
 /* user, etc. aus AD einlesen TODO als cron job konstruieren */
