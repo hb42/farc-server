@@ -3,37 +3,27 @@
  */
 
 import {
-  FarcDB,
-} from "../services";
-import {
     FarcEndpunktDocument,
-} from "../shared/ext";
+} from "@hb42/lib-farc";
+import { LoggerService } from "@hb42/lib-server";
 
-// let Schema = mongoose.Schema;
-// let ObjectId = Schema.Types.ObjectId;
+import {
+  FarcDB,
+  ServiceHandler,
+} from "../services";
 
 export class FarcDAO {
 
-  constructor(private db: FarcDB) {
-    //
+  private db: FarcDB;
+
+  private log = LoggerService.get("farc-server.model.FarcDAO");
+
+  constructor(private services: ServiceHandler) {
+    this.db = services.db;
   }
 
   public getEps(): Promise<FarcEndpunktDocument[]> {
-    console.info("farcService.getEps() ");
+    this.log.info("farcService.getEps() ");
     return this.db.farcEndpunktModel.find({}).exec();
-    // return this.model.EP.find(err => {
-    //   if (err) {
-    //     console.log("error @find " + err);
-    //   } else {
-    //     console.log("@find");
-    //   }
-    // }).exec(err => {
-    //   if (err) {
-    //     console.log("error @exec " + err);
-    //   } else {
-    //     console.log("@exec ");
-    //     // return result;
-    //   }
-    // });
   }
-};
+}

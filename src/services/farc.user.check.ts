@@ -3,23 +3,31 @@
  */
 
 import {
+  FarcOeDocument,
+  FarcUserDocument,
+} from "@hb42/lib-farc";
+import {
+  LoggerService,
+  UserCheck,
+} from "@hb42/lib-server";
+
+import {
   FarcUserDAO,
 } from "../model";
 import {
-  FarcOeDocument,
-  FarcUserDocument,
-  UserCheck,
-} from "../shared/ext";
-import {
-  FarcDB,
+  ServiceHandler,
 } from "./backend";
 
 export class FarcUserCheck implements UserCheck {
 
   private userDAO: FarcUserDAO;
+  private admrole: string;
 
-  constructor(private db: FarcDB, private admrole: string) {
-    this.userDAO = new FarcUserDAO(db);
+  private log = LoggerService.get("farc-server.services.FarcUserCheck");
+
+  constructor(private services: ServiceHandler, private timeoutSec: number) {
+    this.userDAO = new FarcUserDAO(services.db);
+    this.admrole = services.config.adminrole;
   }
 
   /*
@@ -27,36 +35,60 @@ export class FarcUserCheck implements UserCheck {
    returns canonical UID || null if error
    => jeder User, der in der DB gefunden wird, ist gueltig
    */
-  public authUser(uid: string, pwd?: string): Promise<string> {
-    let user: string;
+  public authUser(uid: string, pwd?: string): Promise<string | null> {
     const name = uid.split("\\")[1];
-    if (name) {
-      user = name.toUpperCase();
-    } else {
-      user = uid.toUpperCase();
-    }
+    const user = name ? name.toUpperCase() : uid.toUpperCase();
+    this.log.info("authUser uid=" + uid);
     return this.userDAO.findOne(user)
-        .then( (usr: FarcUserDocument) => usr ? usr.uid : null );
+        .then((usr: FarcUserDocument) => usr ? usr.uid : null)
+        .catch((err) => {
+          this.log.error("error fetching user " + err);
+          return null;
+        });
   }
 
   /*
    returns user data object
    */
-  public getUser(uid: string): Promise<any> {
-    return this.userDAO.findOne(uid)
-        .then( (usr: FarcUserDocument) => {
+  public getUser(userid: string): Promise<any> {
+    return this.userDAO.findOne(userid)
+        .then((usr: FarcUserDocument) => {
           return this.userDAO.getOe(usr.uid)
-              .then( (useroe: FarcOeDocument) => {
-                const adm: boolean = -1 < usr.roles.findIndex( (dn) => {
-                      return dn.toLowerCase().includes(this.admrole.toLowerCase());
-                    });
-                return {u: usr, oe: useroe, admin: adm};
+              .then((useroe: FarcOeDocument) => {
+                const adm: boolean = -1 < usr.roles.findIndex((dn) => {
+                  return dn.toLowerCase().includes(this.admrole.toLowerCase());
+                });
+                return { uid: usr.uid,
+                         name: usr.name,
+                         vorname: usr.vorname,
+                         mail: usr.mail,
+                         oe: useroe.name,
+                         admin: adm,
+                };
               });
         })
-        .catch( (err) => {
-          console.error("error fetching user " + err);
-          return null;
+        .catch((err) => {
+          this.log.error("error fetching user " + err);
+          // im configMode bekommt jeder Adminrechte
+          if (this.services.configMode) {
+            return { uid: userid,
+                     name: "admin",
+                     vorname: "admin",
+                     admin: true,
+            };
+          } else {
+            return null;
+          }
         });
+  }
+
+  public getJwtSecret(): string {
+    return "QS20oVANByFKI2h0LkCqCL52nWLdbiC0p4pnJF5LaKBHcs1pNRIRyYsPIL6zBTZd7WZhJdudTFOYKDzbbkCwE" +
+           "iyeO5x9GWBfFxm68GODUsmXFjGKCQYcpH8t";
+  }
+
+  public getJwtTimeout(): number {
+    return this.timeoutSec;
   }
 
 }

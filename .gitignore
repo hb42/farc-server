@@ -7,11 +7,17 @@
 # build
 /dist
 /src/**/*.js
+/src/**/*.map
 
 # logs, internal files
 *.zip
+*.tgz
 *.log
 /div
 
 # os
 .DS_STORE
+
+# wg. passwd, etc.
+/src/resource/conf*
+/src/resource/ad*

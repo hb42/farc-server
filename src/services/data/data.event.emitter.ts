@@ -14,5 +14,6 @@ export class DataEventEmitter extends EventEmitter {
 
   public evtReadDataReady = "readDataReady";
   public evtReadFsReady = "evtReadFsReady";
+  public evtVormerkReady = "evtVormerkReady";
 
 }

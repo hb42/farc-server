@@ -1,0 +1,18 @@
+{
+  "appenders": {
+    "everything": {
+      "type": "file",
+      "filename": "../log/server.log",
+      "maxLogSize": 2000000,
+      "backups": 5,
+      "keepFileExt": true,
+      "layout": {
+        "type": "pattern",
+        "pattern": "%d %-5p [%c] %m"
+      }
+    }
+  },
+  "categories": {
+    "default": { "appenders": [ "everything" ], "level": "all" }
+  }
+}

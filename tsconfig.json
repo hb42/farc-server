@@ -1,32 +1,35 @@
 {
   "compilerOptions": {
     "target": "ES6",
-    "module": "commonjs",
     "sourceMap": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "removeComments": true,
     "noEmitHelpers": false,
-    "baseUrl": "./src",
-    "paths": {
-      "uuid": ["node_modules/@types/node-uuid"]
-    },
-    "types": [
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "declaration": true,
+    "stripInternal": true,
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "inlineSources": true,
+    "skipLibCheck": true,
+    "lib": [
+      "es6",
+      "dom"
     ]
   },
   "include": [
-    "src/**/*",
-    "node_modules/@hb42/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
     "div",
-    "dist"
+    "dist",
+    "lib"
   ],
-  "awesomeTypescriptLoaderOptions": {
-    "forkChecker": true,
-    "useWebpackText": true
-  },
   "compileOnSave": false,
   "buildOnSave": false
 

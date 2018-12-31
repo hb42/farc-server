@@ -3,13 +3,15 @@
  */
 
 import * as express from "express";
-// import * as http from "http";
 import * as request from "request";
 
 import {
-    authURL,
-    RestApi,
-} from "../../shared/ext";
+  authURL,
+} from "@hb42/lib-common";
+import {
+  LoggerService,
+  RestApi,
+} from "@hb42/lib-server";
 
 /**
  * Pseudo IIS
@@ -25,6 +27,8 @@ export class AspAPI implements RestApi {
   private fakeUser: string;
   // { app1: { server: "http://server:port", url: "/ntlmlogin"}, }
   private services: any;
+
+  private log = LoggerService.get("farc-servcer.services.rest.AspAPI");
 
   constructor() {
     // this.initRoutes(router);
@@ -43,12 +47,12 @@ export class AspAPI implements RestApi {
     router.route("/get")  // ?app=<app name>
         .get((req: express.Request, res: express.Response) => {
 
-          let app = req.query["app"];
-          console.info("asp.api: app=" + app);
-          let uid = this.fakeUser;
+          const app = req.query["app"];
+          this.log.info("asp.api: app=" + app);
+          const uid = this.fakeUser;
 
-          let authUrl = this.services[app].server + authURL; // + "?uid=" + uid;
-          let result = {}; // = "let LOGIN_TOKEN="123456";";
+          const authUrl = this.services[app].server + authURL; // + "?uid=" + uid;
+          const result: any = {}; // = "let LOGIN_TOKEN="123456";";
           result["type"] = "NTLM";
           result["uid"] = uid;
 
@@ -58,22 +62,12 @@ export class AspAPI implements RestApi {
                     json: result,
                   }, (error, response, body) => {
             if (error) {
-              console.info("asp.api: error in request: " + error);
+              this.log.info("asp.api: error in request: " + error);
             } else {
-              console.info(response.statusCode, body);
+              this.log.info(response.statusCode, body);
               res.send(JSON.stringify(body));
             }
           });
-
-          // http.get( url, (response) => {
-          //    response.on("data", (data) => {
-          //      result += data.toString();
-          //    });
-          //    response.on("end", () => {
-          //      res.send(result);
-          //    });
-          //  });
-
         });
 
   }

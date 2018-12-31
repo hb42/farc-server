@@ -4,18 +4,16 @@
 
 import * as fs from "fs";
 
-// import {
-//   Model,
-// } from "mongoose";
-
-import {
-    FarcDB,
-} from "../services";
 import {
   FarcOeDocument,
   FarcUser,
   FarcUserDocument,
-} from "../shared/ext";
+} from "@hb42/lib-farc";
+import { LoggerService } from "@hb42/lib-server";
+
+import {
+    FarcDB,
+} from "../services";
 
 /* query
    NICHT IN: let uids= []; uids.push("..") ... -> { "uid" : { $nin: uids } }
@@ -27,16 +25,21 @@ import {
 
 export class FarcUserDAO {
 
-  constructor(private db: FarcDB) {
-    console.info("c'tor TestSession");
+  private db: FarcDB;
+
+  private log = LoggerService.get("farc-server.model.FarcUserDAO");
+
+  constructor(private farcdb: FarcDB) {
+    this.log.info("c'tor TestSession");
+    this.db = farcdb;
   }
 
-  // {"uid":"S0777493","name":"Steinbach","vorname":"Hermann","mail":"Hermann.Steinbach@sparkasse-co-lif.de",
-  //  "roles":["e077guv-zzv-791-itundkommunikation-coburg-lichtenfels-spk", ... ]} ,
+  // {"uid":"S07xxx","name":"xxx","vorname":"xxx","mail":"xxx",
+  //  "roles":["e077guv-zzv-7xxx", ... ]} ,
   // DEBUG
   public importFile(file: string) {
     const config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach( (u) => {
+    config.user.forEach((u: any) => {
       // let usr = new this.model.USER({
       const usr = new this.db.farcUserModel({
         uid: u.uid,
@@ -47,24 +50,24 @@ export class FarcUserDAO {
       });
       usr.save()
           .then((res) => {
-            console.info("saved " + u.uid);
+            this.log.info("saved " + u.uid);
           })
           .catch((err) => {
-            console.error("error saving " + u.uid);
+            this.log.error("error saving " + u.uid);
           });
       });
   }
 
-  public findOne(uid: string): Promise<FarcUserDocument> {
+  public findOne(uid: string): Promise<FarcUserDocument | null> {
     // empty result -> null (kein error)
     return this.db.farcUserModel.findOne({uid: uid.toUpperCase()}).exec();
   }
 
-  public updateUser(user: FarcUserDocument, neu: FarcUser ): Promise<any> {
+  public updateUser(user: FarcUserDocument, neu: FarcUser): Promise<any> {
     return this.db.farcUserModel.findByIdAndUpdate(user._id,
                                            { name: neu.name, vorname: neu.vorname,
                                              mail: neu.mail, roles: neu.roles},
-                                           {new: true} ).exec();
+                                           {new: true}).exec();
   }
 
   public find(condition: object): Promise<FarcUserDocument[]> {
@@ -79,18 +82,27 @@ export class FarcUserDAO {
     return this.db.farcUserModel.remove({_id: user._id}).exec();
   }
 
-  public getOe(uid: string): Promise<FarcOeDocument> {
+  public getOe(uid: string): Promise<FarcOeDocument | null> {
     return this.db.farcEndpunktModel.findOne({endpunkt: uid.toUpperCase()}).exec()
-        .then( (ep) => {
-          return this.db.farcOeModel.findById(ep.oe).exec();
+        .then((ep) => {
+          if (ep) {
+            return this.db.farcOeModel.findById(ep.oe).exec();
+          } else {
+            this.log.error("Kein Home-Verzeichnis fuer Benutzer " + uid);
+            return null;
+          }
+        })
+        .catch((err) => {
+          this.log.error("Kein Home-Verzeichnis fuer Benutzer " + uid);
+          return null;
         });
   }
 
   // DEBUG
   public testfile(file: string) {
-    const uids = [];
+    const uids: any[] = [];
     const config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach( (u) => {
+    config.user.forEach((u: any) => {
       uids.push(u.uid);
     });
     uids.pop();

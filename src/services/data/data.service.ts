@@ -3,24 +3,23 @@
  */
 
 import {
+  LoggerService,
+} from "@hb42/lib-server";
+
+import {
   DataEventEmitter,
+  DataServiceHandler,
   FarcFilesystem,
   FarcReadEps,
 } from ".";
-import {
-  LoggerService,
-} from "../../shared/ext";
-import {
-  FarcDB,
-} from "../backend";
 
 export class DataService {
 
   private log = LoggerService.get("farc-server.services.data.DataService");
   private dataEventHandler: DataEventEmitter;
 
-  constructor(private db: FarcDB, private spk: boolean) {
-    this.dataEventHandler = new DataEventEmitter();
+  constructor(private services: DataServiceHandler) {
+    this.dataEventHandler = services.dataEventHandler;
   }
 
   /**
@@ -39,18 +38,21 @@ export class DataService {
     if (this.dataEventHandler.listenerCount(this.dataEventHandler.evtReadDataReady) > 0) {
       this.dataEventHandler.removeAllListeners(this.dataEventHandler.evtReadDataReady);
     }
+    // event wird von readEps() ausgeloest
     this.dataEventHandler.on(this.dataEventHandler.evtReadDataReady, () => {
       this.log.info("... start reading entries ...");
       this.readFs();
     });
 
-    if (this.dataEventHandler.listenerCount(this.dataEventHandler.evtReadFsReady) > 0) {
-      this.dataEventHandler.removeAllListeners(this.dataEventHandler.evtReadFsReady);
-    }
-    this.dataEventHandler.on(this.dataEventHandler.evtReadFsReady, () => {
-      // push info "new tree"
-      this.log.debug("event evtReadFsReady");
-    });
+    // Event wird in FarcApi behandelt
+    // if (this.dataEventHandler.listenerCount(this.dataEventHandler.evtReadFsReady) > 0) {
+    //   this.dataEventHandler.removeAllListeners(this.dataEventHandler.evtReadFsReady);
+    // }
+    // // Verzeichnnisse-Einlesen ist fertig
+    // this.dataEventHandler.on(this.dataEventHandler.evtReadFsReady, () => {
+    //   // push info "new tree"
+    //   this.log.debug("event evtReadFsReady");
+    // });
 
     this.log.info("... start reading EPs ...");
     this.readEps();
@@ -61,8 +63,8 @@ export class DataService {
    *
    */
   public readEps() {
-    const reader: FarcReadEps = new FarcReadEps(this.dataEventHandler, this.db, this.spk);
-    reader.readEps();
+    const epReader: FarcReadEps = new FarcReadEps(this.services);
+    epReader.readEps();
   }
 
   /**
@@ -70,8 +72,8 @@ export class DataService {
    *
    */
   public readFs() {
-    const reader: FarcFilesystem = new FarcFilesystem(this.dataEventHandler, this.db);
-    reader.read();
+    const fsReader: FarcFilesystem = new FarcFilesystem(this.services);
+    fsReader.read();
   }
 
 }

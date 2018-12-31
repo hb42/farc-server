@@ -3,21 +3,28 @@
  */
 
 import {
-  FarcDB,
-} from "../services";
-import {
   FarcConfig,
   FarcConfigDocument,
-} from "../shared/ext";
+} from "@hb42/lib-farc";
+import { LoggerService } from "@hb42/lib-server";
+
+import {
+  FarcDB,
+} from "../services";
 
 export class FarcConfigDAO {
 
-  constructor(private db: FarcDB) {
-    console.info("c'tor FarcConfigDao");
+  private db: FarcDB;
+
+  private log = LoggerService.get("farc-server.model.FarcConfigDAO");
+
+  constructor(private farcdb: FarcDB) {
+    this.log.info("c'tor FarcConfigDao");
+    this.db = farcdb;
   }
 
   public findConfig(confName: string): Promise<any> {
-    return this.findConf(confName).then( (conf) => {
+    return this.findConf(confName).then((conf) => {
       if (conf) {
         return conf.value;
       } else {
@@ -27,7 +34,7 @@ export class FarcConfigDAO {
   }
 
   public updateConfig(confName: string, newValue: any): Promise<FarcConfigDocument> {
-    return this.findConf(confName).then( (val: FarcConfigDocument) => {
+    return this.findConf(confName).then((val: FarcConfigDocument) => {
       if (val) {
         val.value = newValue;
         return val.save();
@@ -49,11 +56,11 @@ export class FarcConfigDAO {
     return this.db.farcConfigModel.remove({name: confName}).exec();
   }
 
-  private findConf(confName: string): Promise<FarcConfigDocument> {
+  private findConf(confName: string): Promise<FarcConfigDocument | null> {
     // empty result -> null (kein error)
     return this.db.farcConfigModel.findOne({name: confName}).exec()
-        .then( (conf) => {
-          if (conf !== null && conf !== undefined ) {
+        .then((conf) => {
+          if (conf !== null && conf !== undefined) {
             return conf;
           } else {
             return null;

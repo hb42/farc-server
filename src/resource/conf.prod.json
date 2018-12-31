@@ -1,7 +1,0 @@
-{
-  "mongodbServer": "nathan",
-  "mongodbDB": "farc",
-  "mongodbPort": 27017,
-  "webapp": "http://calvados:23000",
-  "adminrole": "791-IT-Service-Basis"
-}

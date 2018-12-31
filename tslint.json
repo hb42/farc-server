@@ -33,7 +33,9 @@
     /* if innerhalb for(..in..) erforderlich (s. Doku) - zu aufwendig, also erstmal weglassen */
     "forin": false,
     /* sort explizit auf case-insensitive */
-    "ordered-imports": [true, {"import-sources-order": "case-insensitive", "named-imports-order": "case-insensitive"}]
+    "ordered-imports": [true, {"import-sources-order": "case-insensitive", "named-imports-order": "case-insensitive"}],
+    /* import from rxjs/observable etc. erlauben */
+    "no-submodule-imports": [true, "rxjs"]
   },
   "rulesDirectory": [
     /*

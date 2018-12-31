@@ -5,34 +5,40 @@
 import * as mongoose from "mongoose";
 
 import {
-  farcConfigSchema,
-  farcDriveSchema,
-  farcEndpunktSchema,
-  farcEntrySchema,
-  farcOeSchema,
-  farcUserSchema,
-} from "../../model";
-import {
   FarcConfigDocument,
   FarcDriveDocument,
   FarcEndpunktDocument,
   FarcEntryDocument,
   FarcOeDocument,
+  FarcResultDocument,
   FarcUserDocument,
+} from "@hb42/lib-farc";
+import {
   MongoDB,
-} from "../../shared/ext";
+} from "@hb42/lib-server";
+
+import {
+  farcConfigSchema,
+  farcDriveSchema,
+  farcEndpunktSchema,
+  farcEntrySchema,
+  farcOeSchema,
+  farcResultSchema,
+  farcUserSchema,
+} from "../../model";
 
 export class FarcDB {
 
-  private db: MongoDB;
+  private readonly db: MongoDB;
   private farcConfigMod: mongoose.Model<FarcConfigDocument>;
   private farcDriveMod: mongoose.Model<FarcDriveDocument>;
   private farcEndpunktMod: mongoose.Model<FarcEndpunktDocument>;
   private farcEntryMod: mongoose.Model<FarcEntryDocument>;
   private farcOeMod: mongoose.Model<FarcOeDocument>;
   private farcUserMod: mongoose.Model<FarcUserDocument>;
+  private farcResultMod: mongoose.Model<FarcResultDocument>;
 
-  constructor(server: string, db: string, port: number, cred: any) {
+  constructor(server: string, db: string, port: number, cred: mongoose.ConnectionOptions) {
     // DB-Connection
     this.db = new MongoDB(server, db, port, cred);
     this.makeModels();
@@ -59,6 +65,9 @@ export class FarcDB {
   public get farcUserModel(): mongoose.Model<FarcUserDocument> {
     return this.farcUserMod;
   }
+  public get farcResultModel(): mongoose.Model<FarcResultDocument> {
+    return this.farcResultMod;
+  }
 
   private makeModels() {
     this.farcConfigMod = this.db.getConnection()
@@ -78,6 +87,9 @@ export class FarcDB {
 
     this.farcUserMod = this.db.getConnection()
                        .model<FarcUserDocument>("USER", farcUserSchema, "farc_user");
+
+    this.farcResultMod = this.db.getConnection()
+                         .model<FarcResultDocument>("RESULT", farcResultSchema, "farc_result");
   }
 
 }

@@ -12,5 +12,5 @@ export let farcUserSchema = new Schema({
   name: String,
   vorname: String,
   mail: String,
-  roles: [String],  // dn (sinnvoll?)
+  roles: [String],  // dn
 });

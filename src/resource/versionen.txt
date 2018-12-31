@@ -1,0 +1,12 @@
+
+1.0.0-beta.5    30.12.2018
+                - alle Bibliotheken auf aktuellen Stand gebracht
+
+1.0.0-beta.1    25.12.2018
+                Neuer Server auf Basis node.js/express, mit mongodb als Datenbank. Die
+                Funktionalitaet der alten Java-Version ist schon mal vorhanden:
+                - REST-Server fuer farc-Client-App, incl. Logon-Handling
+                - Einlesen der Original- und Archiv-Baeume sofort oder zeitgesteuert
+                - Baum aus der DB zusammensetzen und an den Client liefern
+                - Vormerkungen fuer Verschieben/Kopiern/Loeschen sofort oder
+                  zeitgesteuert ausfuehren

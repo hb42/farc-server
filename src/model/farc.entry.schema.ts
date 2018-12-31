@@ -22,7 +22,6 @@ export let farcEntrySchema = new Schema ({
   selected     : Number,  // Enum FarcSelectType
   selectUid    : String,         //   UID
   selectDate   : Number,        //   milis
-  processDate  : Number,    // Verarbeitung millis
-  processResult: String,    //   "OK" oder Fehlermeldung
-
+  clientState  : String,    //  nur fuer UI
+  drive        : Schema.Types.ObjectId,  // driveID -> Pfade f. copy/move
 });
