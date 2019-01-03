@@ -1,3 +1,5 @@
+1.0.0-beta.6    03.01.2019
+                - cron handling war total verbockt. Jetzt funktioniert's wieder.
 
 1.0.0-beta.5    30.12.2018
                 - alle Bibliotheken auf aktuellen Stand gebracht

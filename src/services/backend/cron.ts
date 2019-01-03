@@ -1,5 +1,11 @@
+import {LoggerService} from "@hb42/lib-server";
 import { CronJob, CronTime, time } from "cron";
 
+/**
+ * Cron Jobs steuern
+ *
+ * Wrapper fuer https://github.com/kelektiv/node-cron
+ */
 export class Cron {
 
   private static checkCronString(cronTime: string): CronTime | null {
@@ -11,51 +17,66 @@ export class Cron {
     }
   }
 
-  private cronJob: CronJob;
+  private log = LoggerService.get("farc-server.services.backend.Cron");
+
+  private cronJob: CronJob | null;
 
   private time: string;
   private cmd: () => void;
 
-  constructor(onTick: () => void) {
-    this.cmd = onTick;
+  constructor() {
+    this.time = "0 0 0 * * *";
+    this.cmd = () => { /* nop */ };
   }
 
-  public isValid(): boolean {
-    return this.cronJob && !!this.cronJob.running;
-  }
-
+  /**
+   * Zeit fuer den Cron Job setzen
+   *
+   * Der Wert wird nur gespeichert. Keine Aenderung am ggf. laufenden cron service.
+   * Wert wird erst mit start() eingetragen.
+   *
+   * @param cronTime - cron string
+   */
   public setTime(cronTime: string) {
     const ct: CronTime | null = Cron.checkCronString(cronTime);
+    this.log.debug("cron: setTime time=" + ct);
     if (ct) {
       this.time = cronTime;
-      if (this.isValid()) {
-        this.cronJob.stop();
-        this.cronJob.setTime(ct);
-      } else {
-        this.cronJob = new CronJob(cronTime, this.cmd);
-      }
-    }
-  }
-
-  public setCommand(cmd: () => void) {
-    if (this.isValid()) {
-      this.cronJob.stop();
-    }
-    this.cmd = cmd;
-    this.setTime(this.time);
-  }
-
-  public switch(onOff: boolean): boolean {
-    if (onOff) {
-      this.setTime(this.time);
-      if (this.isValid()) {
-        this.cronJob.start();
-      }
     } else {
-      if (this.isValid()) {
-        this.cronJob.stop();
-      }
+      this.log.error("invalid CrontTime string, cannot set time");
     }
-    return this.isValid();
   }
+
+  /**
+   * Kommando fuer den Cron Job setzen
+   *
+   * Der Wert wird nur gespeichert. Keine Aenderung am ggf. laufenden cron service.
+   * Wert wird erst mit start() eingetragen.
+   *
+   * @param cmd - function, die zur eingestellten Zeit augefuehrt wird
+   */
+  public setCommand(cmd: () => void) {
+    this.cmd = cmd;
+  }
+
+  /**
+   * Aktuelle Cron-Zeit und Kommando setzen und neuen cron service starten
+   *
+   */
+  public start() {
+    this.stop();
+    this.cronJob = new CronJob(this.time, this.cmd);
+    this.cronJob.start();
+  }
+
+  /**
+   * cron service entfernen
+   */
+  public stop() {
+    if (this.cronJob) {
+      this.cronJob.stop();
+      this.cronJob = null;
+    }
+  }
+
 }

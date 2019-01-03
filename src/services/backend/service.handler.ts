@@ -29,7 +29,7 @@ export class ServiceHandler {
 
   public readonly db: FarcDB;
   public readonly dataEventHandler: DataEventEmitter;
-  public readonly cron: Cron;
+  private readonly cron: Cron;
 
   private readonly EXTERNAL_PROCESS = "data.service.js";
 
@@ -61,7 +61,7 @@ export class ServiceHandler {
 
   private configDAO: FarcConfigDAO;
 
-  private log = LoggerService.get("farc-server.services.data.ServiceHandler");
+  private log = LoggerService.get("farc-server.services.backend.ServiceHandler");
 
   constructor(public config: any) {
     // DB-Connection
@@ -76,7 +76,7 @@ export class ServiceHandler {
       this.log.warn("*** ACHTUNG: Programm befindet sich im Konfigurations-Modus, ALLE User haben Admin-Rechte! ***");
     }
 
-    this.cron = new Cron(this.readAll);
+    this.cron = new Cron();
     this.configDAO = new FarcConfigDAO(this.db);
     this.setCron();
   }
@@ -121,21 +121,19 @@ export class ServiceHandler {
 
   public setCron() {
     this.log.debug("CRON setCron()");
-    let cronTime: string;
     let doRead: boolean;
     let doVormerk: boolean;
 
     this.configDAO.findConfig(confCRON).then((val) => {
       const time = checkCronTime(getConfigValue(val));
-      cronTime = time ? "0 " + time[2] + " " + time[1] + " * * *" : "";
-      this.log.debug("CRON cronTime=" + cronTime);
+      // time-string wird beim Eintragen/Lesen in der Config geprueft
+      this.cron.setTime(time ? "0 " + time[2] + " " + time[1] + " * * *" : "");
       this.configDAO.findConfig(confREADTREE).then((read) => {
         doRead = getConfigValue(read);
         this.log.debug("CRON filesystem=" + doRead);
         this.configDAO.findConfig(confEXECVORM).then((vorm) => {
           doVormerk = getConfigValue(vorm);
           this.log.debug("CRON vormerk=" + doVormerk);
-          this.cron.setTime(cronTime);
           if (doRead || doVormerk) {
             this.log.debug("CRON doRead || doVormerk");
             if (doRead && doVormerk) {
@@ -148,8 +146,11 @@ export class ServiceHandler {
               this.log.debug("CRON doVormerk");
               this.cron.setCommand(this.readVorm);
             }
+            this.log.debug("CRON start");
+            this.cron.start();
+          } else {
+            this.cron.stop();
           }
-          this.cron.switch(doRead || doVormerk);
         });
       });
     });
@@ -159,6 +160,7 @@ export class ServiceHandler {
     this.DataHandler.send({msg: ipcREADALL, payload: null});
   }
   public readFS = () => {
+    this.log.debug("CRON send message " + ipcREADFS);
     this.DataHandler.send({msg: ipcREADFS, payload: null});
   }
   public readVorm = () => {
