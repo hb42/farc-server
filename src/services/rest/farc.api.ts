@@ -321,6 +321,7 @@ export class FarcAPI implements RestApi {
                       .then((ob) => {
                         this.log.info("OE saved");
                         this.log.info(ob);
+                        res.json(ob);
                       })
                       .catch((er) => {
                         this.log.error("error saving OE " + oe.name);
