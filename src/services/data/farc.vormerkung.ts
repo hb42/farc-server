@@ -65,6 +65,7 @@ export class FarcVormerkung {
   public readonly DELETE = "delete";
   public readonly WIN_SHELL = "C:/WINDOWS/System32/WindowsPowerShell/v1.0/powershell.exe";
   public readonly WIN_SCRIPT =  "./resource/farcExec.ps1";
+  public readonly WIN_PRE_SCRIPT =  "./resource/farcPreRead.ps1";
   public readonly LINUX_SHELL = "/bin/bash";
   public readonly LINUX_SCRIPT = "./resource/farcExec.sh"; // TODO noch zu erstellen (hat Zeit)
 
@@ -115,6 +116,32 @@ export class FarcVormerkung {
       return msg;
     } else {
       return "Fehler: kein Datensatz gefunden";
+    }
+  }
+
+  /**
+   * Externes Script starten bevor das Einlesen beginnt
+   *
+   * Hier koennen z.B. DB-Dumps gestartet werden.
+   */
+  public async runPreReadScript() {
+    if (this.services.isWindows) {  // Windows -> PowerShell
+      const args: string[] = ["-NonInteractive", "-NoProfile",
+        "-file", this.WIN_PRE_SCRIPT,
+        "-user", this.services.config.farcDBuser,
+        "-pwd", this.services.config.farcDBpwd];
+      try {
+        const rc: string = await this.execScript(this.WIN_SHELL, args);
+        this.log.debug("PreScript output=");
+        this.log.debug(rc);
+        return rc;
+      } catch (err) {
+        this.log.debug("ERROR running PreScript");
+        this.log.debug(err.message);
+        return err.message;
+      }
+    } else {  // TODO linux-Handling
+      this.log.error("PreScript kann im Moment nur unter Windows ausgefuehrt werden.");
     }
   }
 

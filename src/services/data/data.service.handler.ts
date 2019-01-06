@@ -134,6 +134,9 @@ export class DataServiceHandler {
     // Vormerkungen erledigt, ggf. readFS
     this.dataEventHandler.on(this.dataEventHandler.evtVormerkReady, () => {
       this.log.info("Vormerkungen erledigt");
+      // vor dem Einlesen ein externes Script aufrufen
+      this.vormerkHandler.runPreReadScript();
+
       if (readall) {  // readall | readfilesystem
         this.log.debug("CRON do read all");
         // DEBUG EP-Tabelle neu aufbauen
