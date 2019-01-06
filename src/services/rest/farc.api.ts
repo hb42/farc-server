@@ -7,6 +7,8 @@ import * as fs from "fs";
 import * as os from "os";
 
 import {
+  apiCHILDREN, apiCONFIG, apiDRIVE, apiDRIVES, apiEPS, apiEXECVORM, apiFILES, apiOELIST,
+  apiOE, apiOES, apiREADALL, apiREADVORM, apiRESULT, apiRESULTS, apiTREE, apiVORMERKUNG,
   confCRON, confEXECVORM, confMAXERL,
   confPACK, confREADTREE,
   confUSER,
@@ -126,46 +128,31 @@ export class FarcAPI implements RestApi {
 
     });
 
-    router.route("/test")
-        .get(async (req: express.Request, res: express.Response) => {
-          const conf = await this.configDAO.findConfig(confMAXERL);
-          const days = conf ? getConfigValue(conf) : 90;
-          this.log.debug("##TEST## testing for " + days + " days");
-          this.log.debug("##TEST## typeof days: " + typeof days);
-          const maxdate = new Date().getTime() - days * 24 * 60 * 60 * 1000;
-          this.db.farcResultModel.find({processDate: {$lt: maxdate}}).exec()
-              .then((results: FarcResultDocument[]) => {
-                if (results) {
-                  this.log.debug("##TEST## count: " + results.length);
-                  res.json(results);
-                } else {
-                  this.log.debug("##TEST## nothing found ");
-                  res.json("nothing found");
-                }
-          });
-          // // alles einlesen
-          // this.services.readAll();
-          // // nicht auf's Einlesen warten
-          // res.json("runnning ... ");
-          // this.services.sendSSE("SSE test " + new Date().toLocaleString());
-          // res.json("sent SSE");
-        });
+    // router.route("/test")
+    //     .get(async (req: express.Request, res: express.Response) => {
+    //       // // alles einlesen
+    //       // this.services.readAll();
+    //       // // nicht auf's Einlesen warten
+    //       // res.json("runnning ... ");
+    //       // this.services.sendSSE("SSE test " + new Date().toLocaleString());
+    //       // res.json("sent SSE");
+    //     });
 
     // --- Tree ---
     //
     // Baum bis zu den EPs holen
-    router.route("/tree")
+    router.route(apiTREE)
         .get((req: express.Request, res: express.Response) => {
           const sess: FarcSession = this.getSessionData(req);
           res.json(this.farcTree.getTree(sess.oe, sess.uid, sess.admin));
         });
-    // naechste Verzeichnisebene holen (req.body -> {entryid: id})
-    router.route("/children/:entryid")
+    // naechste Verzeichnisebene holen
+    router.route(apiCHILDREN + "/:entryid")
         .get((req: express.Request, res: express.Response) => {
           this.farcTree.getChildren(req.params.entryid).then((nodes: FarcTreeNode[]) => res.json(nodes));
         });
-    // Dateien fuer Verzeichnis holen (req.body -> {entryid: id})
-    router.route("/files/:entryid")
+    // Dateien fuer Verzeichnis holen
+    router.route(apiFILES + "/:entryid")
         .get((req: express.Request, res: express.Response) => {
           this.log.debug("## GET /files/" + req.params.entryid);
           this.farcTree.getFiles(req.params.entryid).then((nodes: FarcTreeNode[]) => {
@@ -176,7 +163,7 @@ export class FarcAPI implements RestApi {
 
     // --- OE-List ---
     //
-    router.route("/oelist")
+    router.route(apiOELIST)
         .get((req: express.Request, res: express.Response) => {
           const sess: FarcSession = this.getSessionData(req);
           res.json(this.farcTree.getOeList(sess.oe, sess.admin));
@@ -184,9 +171,9 @@ export class FarcAPI implements RestApi {
 
     // --- Config ---
     //
-    router.route("/config/:conf_name")
+    router.route(apiCONFIG + "/:conf_name")
         .all((req: express.Request | any, res: express.Response, next) => {
-          req["confName"] = req.params.conf_name;
+          req["confName"] = req.params.conf_name;  // Paramter fuer die weitere Bearbeitung festhalten
           // wenn hier ein confName "USER_xxxx" auftaucht, auf den aktuellen Benutzer
           // umsetzen. Koennte ein Fehler sein oder ein Manipulationsversuch. So bekommt
           // der User immer nur seine eigenen Daten.
@@ -215,7 +202,6 @@ export class FarcAPI implements RestApi {
         .post((req: express.Request | any, res: express.Response) => {
           const conf: any = req.body;
           this.configDAO.updateConfig(req["confName"], conf).then((val) => {
-            // TODO DEBUG
             if (req["confName"] === confCRON || req["confName"] === confREADTREE || req["confName"] === confEXECVORM) {
               this.log.debug("CRON POST /config/" + req["confName"] + " val=" + conf);
               this.services.setCron();
@@ -229,7 +215,7 @@ export class FarcAPI implements RestApi {
 
     // --- Drive ---
     //
-    router.route("/drives")
+    router.route(apiDRIVES)
         .get((req: express.Request, res: express.Response) => {
           this.farcTree.getDrives().then((drvs: FarcDriveDocument[]) => res.json(drvs));
         })
@@ -253,7 +239,6 @@ export class FarcAPI implements RestApi {
                                                      }, {new: true}).exec()
                 .then((result: FarcDriveDocument) => {
                   this.log.info("post save");
-                  this.log.info(result);
                   res.json(result);
                 })
                 .catch((err) => {
@@ -272,19 +257,16 @@ export class FarcAPI implements RestApi {
                   res.json(err);  // TODO besseres Fehlerhandling
                 });
           }
-        })
-        // Laufwerk loeschen (incl. EPs f. drive)
-        // TODO f.delete besser param in url, nicht body!
+        });
+    // Laufwerk loeschen (incl. EPs f. drive)
+    router.route(apiDRIVE + "/:entryid")
         .delete((req: express.Request, res: express.Response) => {
           if (!this.getSessionData(req).admin) {
             return;
           }
-          const drive: FarcDriveDocument = req.body;
-          this.log.info(drive);
-          this.log.info(req);
-          this.db.farcDriveModel.findByIdAndRemove(drive._id).exec()
+          this.db.farcDriveModel.findByIdAndRemove(req.params.entryid).exec()
               .then((r) => {
-                this.db.farcEndpunktModel.remove({drive: drive._id}).exec()
+                this.db.farcEndpunktModel.remove({drive: req.params.entryid}).exec()
                     .then((ep) => {
                       res.json(r);
                     })
@@ -301,7 +283,7 @@ export class FarcAPI implements RestApi {
 
     // --- OE ---
     //
-    router.route("/oes")
+    router.route(apiOES)
         .get((req: express.Request, res: express.Response) => {
           this.db.farcOeModel.find().exec()
               .then((oes: FarcOeDocument[]) => res.json(oes));
@@ -320,7 +302,6 @@ export class FarcAPI implements RestApi {
                   oeRec.save()
                       .then((ob) => {
                         this.log.info("OE saved");
-                        this.log.info(ob);
                         res.json(ob);
                       })
                       .catch((er) => {
@@ -344,13 +325,13 @@ export class FarcAPI implements RestApi {
                   res.json(err);  // TODO besseres Fehlerhandling
                 });
           }
-        })
+        });
+    router.route(apiOE + "/:entryid")
         .delete((req: express.Request, res: express.Response) => {
           if (!this.getSessionData(req).admin) {
             return;
           }
-          const oe: FarcOeDocument = req.body;
-          this.db.farcOeModel.findByIdAndRemove(oe._id).exec()
+          this.db.farcOeModel.findByIdAndRemove(req.params.entryid).exec()
               .then((r) => {
                 res.json(r);
               })
@@ -362,7 +343,7 @@ export class FarcAPI implements RestApi {
 
     // --- Endpunkt ---
     //
-    router.route("/eps")
+    router.route(apiEPS)
         .get((req: express.Request, res: express.Response) => {
           this.db.farcEndpunktModel.find().lean().exec()
               .then((eps: FarcEndpunktDocument[]) => res.json(eps));
@@ -397,7 +378,7 @@ export class FarcAPI implements RestApi {
 
     // --- Vormerkungen ---
     //
-    router.route("/vormerkung")
+    router.route(apiVORMERKUNG)
         .get((req: express.Request, res: express.Response) => {
           const sess: FarcSession = this.getSessionData(req);
           this.farcTree.getVormerkung(sess.uid, sess.admin).then((vor: FarcTreeNode[]) => {
@@ -411,28 +392,23 @@ export class FarcAPI implements RestApi {
           });
         });
 
-    router.route("/execvorm/:entryid")
+    router.route(apiEXECVORM + "/:entryid")
         .get((req: express.Request, res: express.Response) => {
-          // const vor: FarcTreeNode = req.body;
-          // TODO FS
           this.services.execVormerk(req.params.entryid).then((rc) => {
             res.json(rc);
           });
-          // this.vormerkHandler.runVormerkSingle(req.params.entryid).then((rc) => {
-          //   res.json(rc);
-          // });
         });
 
-    router.route("/result")
+    router.route(apiRESULTS)
         .get((req: express.Request, res: express.Response) => {
           const sess: FarcSession = this.getSessionData(req);
           this.farcTree.getResult(sess.uid, sess.admin).then((vor: FarcResultDocument[]) => {
             res.json(vor);
           });
-        })
+        });
+    router.route(apiRESULT + "/:entryid")
         .delete((req: express.Request, res: express.Response) => {
-          const result: FarcResultDocument = req.body;
-          this.db.farcResultModel.findByIdAndRemove(result._id).exec()
+          this.db.farcResultModel.findByIdAndRemove(req.params.entryid).exec()
               .then((r) => {
                 res.json("OK");
               })
@@ -444,7 +420,7 @@ export class FarcAPI implements RestApi {
 
     // --- Einlesen ---
     //
-    router.route("/readall")
+    router.route(apiREADALL)
         .get((req: express.Request, res: express.Response) => {
           // Filesystem einlesen
           this.services.readFS();
@@ -452,7 +428,7 @@ export class FarcAPI implements RestApi {
           res.json("Einlesen aller Laufwerke gestartet ... ");
         });
 
-    router.route("/readvorm")
+    router.route(apiREADVORM)
         .get((req: express.Request, res: express.Response) => {
           // alle Vormerkungen ausfuehren
           this.services.readVorm();

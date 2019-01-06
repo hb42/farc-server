@@ -13,6 +13,9 @@ import {
   authURL,
 } from "@hb42/lib-common";
 import {
+  sseNAME,
+} from "@hb42/lib-farc";
+import {
   LoggerService,
   Webserver,
 } from "@hb42/lib-server";
@@ -53,7 +56,7 @@ const services = new ServiceHandler(config);
 const farcserver = new Webserver(config.restAPIport, "farc", new FarcUserCheck(services, config.jwtTimeoutSec));
 farcserver.setCorsOptions({origin: config.webapp, credentials: true});
 farcserver.addApi(new FarcAPI(services));
-farcserver.setSSE("farc");
+farcserver.setSSE(sseNAME);
 farcserver.setDebug(true);
 farcserver.start();
 services.setWebserver(farcserver);
