@@ -7,15 +7,15 @@ import * as fs from "fs";
 import * as os from "os";
 
 import {
-  apiCHILDREN, apiCONFIG, apiDRIVE, apiDRIVES, apiEPS, apiEXECVORM, apiFILES, apiOELIST,
-  apiOE, apiOES, apiREADALL, apiREADVORM, apiRESULT, apiRESULTS, apiTREE, apiVORMERKUNG,
-  confCRON, confEXECVORM, confMAXERL,
-  confPACK, confREADTREE,
+  apiCHILDREN, apiCONFIG, apiDRIVE, apiDRIVES, apiEPS, apiEXECVORM, apiFILES, apiOE,
+  apiOELIST, apiOES, apiREADALL, apiREADVORM, apiRESULT, apiRESULTS, apiROOT, apiTREE,
+  apiVORMERKUNG, confCRON, confEXECVORM,
+  confPACK,
+  confREADTREE,
   confUSER,
   FarcDriveDocument,
-  FarcEndpunktDocument,
-  FarcOeDocument, FarcResultDocument,
-  FarcTreeNode, getConfigValue, apiROOT,
+  FarcEndpunktDocument, FarcOeDocument,
+  FarcResultDocument, FarcTreeNode,
 } from "@hb42/lib-farc";
 import {
   LoggerService,
