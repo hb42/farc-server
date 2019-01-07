@@ -15,7 +15,7 @@ import {
   FarcDriveDocument,
   FarcEndpunktDocument,
   FarcOeDocument, FarcResultDocument,
-  FarcTreeNode, getConfigValue,
+  FarcTreeNode, getConfigValue, apiROOT,
 } from "@hb42/lib-farc";
 import {
   LoggerService,
@@ -42,8 +42,9 @@ import {
  */
 export class FarcAPI implements RestApi {
 
+  private apiroot = apiROOT;
   public get path(): string {
-    return "/farc";
+    return this.apiroot;
   }
   private db: FarcDB;
   private farcTree: FarcTree;
