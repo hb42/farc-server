@@ -132,10 +132,10 @@ export class DataServiceHandler {
       this.dataEventHandler.removeAllListeners(this.dataEventHandler.evtVormerkReady);
     }
     // Vormerkungen erledigt, ggf. readFS
-    this.dataEventHandler.on(this.dataEventHandler.evtVormerkReady, () => {
+    this.dataEventHandler.on(this.dataEventHandler.evtVormerkReady, async () => {
       this.log.info("Vormerkungen erledigt");
       // vor dem Einlesen ein externes Script aufrufen
-      this.vormerkHandler.runPreReadScript();
+      await this.vormerkHandler.runPreReadScript();
 
       if (readall) {  // readall | readfilesystem
         this.log.debug("CRON do read all");

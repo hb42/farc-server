@@ -129,7 +129,7 @@ export class FarcVormerkung {
       const args: string[] = ["-NonInteractive", "-NoProfile",
         "-file", this.WIN_PRE_SCRIPT,
         "-user", this.services.config.farcDBuser,
-        "-pwd", this.services.config.farcDBpwd];
+        "-pass", this.services.config.farcDBpwd];
       try {
         const rc: string = await this.execScript(this.WIN_SHELL, args);
         this.log.debug("PreScript output=");
