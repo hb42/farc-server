@@ -89,9 +89,9 @@ You can use this in a batch file to report anomalies, as follows:
 
   Hier verwendete Parameter
 
-    /r:1 /w:1 max. eine Wiederholung mit Verzoegerung 1sec
+    /r:5 /w:1 max. 5 Wiederholungen mit Verzoegerung 1sec
     /np keinen Fortschritt protokollieren
-    Kopieren:
+    Kopieren + Verschieben:
     /e mit Unterverzeichnissen incl. leerer
     Verschieben:
     /move Dateien und Verzeichnisse verschieben (kopiern, dann loeschen)
@@ -129,16 +129,16 @@ if ($type -eq "delete") {
     $arg += $parm_mv
   }
   if ($file) {  # Datei
-    $out = & $prog "${source}" "${target}" "${file}" $arg
+    $out = & $prog "${source}" "${target}" "${file}" $arg 2>&1
   } else {      # Verzeichnis
-    if ($type -eq "copy") {  # incl. Unterverzeichnisse
+   # if ($type -eq "copy") {  # incl. Unterverzeichnisse
       $arg += $parm_dircp
-    }
+   # }
     $out = & $prog "${source}" "${target}" $arg 2>&1
   }
   $result = $LastExitCode
+  $out += "  #*#RC=${result}#*#"
   if ($result -gt 7) {
-    $out += "  #*#robocopy-RC=${result}#*#"
     $rc = 1
   } else {
     $rc = 0
