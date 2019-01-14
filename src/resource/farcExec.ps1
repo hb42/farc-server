@@ -120,7 +120,7 @@ if ($type -eq "delete") {
 # 
 } else {
   $prog = "robocopy"
-  $parm_std = @("/r:1", "/w:1", "/np")
+  $parm_std = @("/r:5", "/w:1", "/np")
   $parm_dircp = @("/e")
   $parm_mv = @("/move")
 
@@ -134,10 +134,11 @@ if ($type -eq "delete") {
     if ($type -eq "copy") {  # incl. Unterverzeichnisse
       $arg += $parm_dircp
     }
-    $out = & $prog "${source}" "${target}" $arg
+    $out = & $prog "${source}" "${target}" $arg 2>&1
   }
   $result = $LastExitCode
-  if ($result -gt 7) { 
+  if ($result -gt 7) {
+    $out += "  #*#robocopy-RC=${result}#*#"
     $rc = 1
   } else {
     $rc = 0

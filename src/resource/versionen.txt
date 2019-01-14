@@ -1,3 +1,8 @@
+
+1.0.0-beta.12   14.01.2019
+                - Das Einlese-Modul bekommt mehr Speicher.
+                - Externes Script erledigt vor jedem Einlesen einen DB-Dump.
+
 1.0.0-beta.7    06.01.2019
                 - REST-API: die Pfade als const in lib-farc gesteckt und dort
                   dokumentiert sowie ein paar Ungereimtheiten beseitigt.
