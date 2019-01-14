@@ -8,6 +8,7 @@
  */
 import * as fs from "fs";
 import * as process from "process";
+import * as v8 from "v8";
 
 import { LoggerService } from "@hb42/lib-server";
 
@@ -31,6 +32,8 @@ const log = LoggerService.get("farc-server.DataService.main");
 const services = new DataServiceHandler(config);
 
 log.info("filesystem+AD module running");
+console.info(new Date().toLocaleString() + " data-service process started, v8.heapSpaceStatistics:");
+console.dir(v8.getHeapSpaceStatistics());
 
 const runonexit = (evt: any) => {
   log.info("DataProcess: terminating on  " + evt);

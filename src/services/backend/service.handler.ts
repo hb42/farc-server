@@ -31,8 +31,6 @@ export class ServiceHandler {
   public readonly dataEventHandler: DataEventEmitter;
   private readonly cron: Cron;
 
-  private readonly EXTERNAL_PROCESS = "data.service.js";
-
   private DataHandler: child_process.ChildProcess;
   public get DATA(): child_process.ChildProcess {
     return this.DataHandler;
@@ -169,21 +167,26 @@ export class ServiceHandler {
 
   private startDataProcess() {
     this.log.info("FORKING DataHandler");
-    this.DataHandler = child_process.fork(this.EXTERNAL_PROCESS, [], {silent: false});
+    if (this.config.filesystemModule) {
+      this.DataHandler = child_process.fork(this.config.filesystemModule, [],
+                                            {silent: false, execArgv: ["--max-old-space-size=4096"]});
 
-    this.DataHandler.on("message", (message: Communication) => {
-      switch (message.msg) {
-        // Einlesen beendet, Tree muss neu aufgebaut werden
-        case ipcREADTREE:
-          this.dataEventHandler.emit(this.dataEventHandler.evtReadFsReady);
-          break;
-        case ipcVORMREADY:
-          this.sendSSE("Vormerkungen erledigt", sseNEWVORM);
-          break;
-        default:
-          break;
-      }
-    });
+      this.DataHandler.on("message", (message: Communication) => {
+        switch (message.msg) {
+            // Einlesen beendet, Tree muss neu aufgebaut werden
+          case ipcREADTREE:
+            this.dataEventHandler.emit(this.dataEventHandler.evtReadFsReady);
+            break;
+          case ipcVORMREADY:
+            this.sendSSE("Vormerkungen erledigt", sseNEWVORM);
+            break;
+          default:
+            break;
+        }
+      });
+    } else {
+      throw new Error("FEHLER: config.filesystemModule nicht definiert - kein Filesystem-Handling moeglich!");
+    }
   }
 
 }
