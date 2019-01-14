@@ -1,4 +1,4 @@
-/*
+/**
  * farc-server
  *
  * Date-Archiv-Server mit REST-API und Routinen fuers Einlesen der Endpunkte.
@@ -8,6 +8,7 @@
 import "reflect-metadata";
 
 import * as fs from "fs";
+import * as v8 from "v8";
 
 import {
   authURL,
@@ -32,20 +33,17 @@ import {
  Mehr Threads fuer fs und mongo(?) bereitstellen (default 4)
  -> http://stackoverflow.com/questions/22644328/when-is-the-thread-pool-used
  (alt.(?): --v8-pool-size=)
+ Sollte hier ueberfluessig sein, die aufwendigen Operationen laufen im extra
+ Modul, das per fork() im eigenen Thread gestartet wird.
  */
-process.env.UV_THREADPOOL_SIZE = "127";
+// process.env.UV_THREADPOOL_SIZE = "127";
 
 // Standard-Logfile
 LoggerService.init("resource/log4js-server.json");
 const log = LoggerService.get("farc-server.main");
 
-// aus Webpack via DefinePlugin
-// declare const WEBPACK_DATA;
-// const metadata = WEBPACK_DATA.metadata;
-// process.env.ENV = metadata.ENV;
-// process.env.NODE_ENV = metadata.NODE_ENV;
-// let configfile = metadata.CONFIGFILE;
-// configfile = "./resource/" + configfile;
+log.info("farc-server starting");
+log.info(v8.getHeapStatistics());
 
 const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
 

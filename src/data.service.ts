@@ -15,25 +15,18 @@ import { LoggerService } from "@hb42/lib-server";
 import { configFile } from "./services";
 import { DataServiceHandler } from "./services/data";
 
-// aus Webpack via DefinePlugin
-// declare const WEBPACK_DATA;
-// const metadata = WEBPACK_DATA.metadata;
-// process.env.ENV = metadata.ENV;
-// process.env.NODE_ENV = metadata.NODE_ENV;
-
-// let configfile = metadata.CONFIGFILE;
+// import config
 const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
 
 // Standard-Logfile-Konfig
 LoggerService.init("resource/log4js-data.json");
 const log = LoggerService.get("farc-server.DataService.main");
 
+log.info("filesystem+AD module starting");
+log.info(v8.getHeapStatistics());
+
 // main
 const services = new DataServiceHandler(config);
-
-log.info("filesystem+AD module running");
-console.info(new Date().toLocaleString() + " data-service process started, v8.heapSpaceStatistics:");
-console.dir(v8.getHeapSpaceStatistics());
 
 const runonexit = (evt: any) => {
   log.info("DataProcess: terminating on  " + evt);
