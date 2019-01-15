@@ -201,12 +201,12 @@ export class FarcFilesystem {
           entries.push(root);
           this.records += entries.length;
           this.epcount--;
-          this.log.debug("sum=" + root.size + " entries=" + entries.length + " remaining=" + this.epcount
-                         + " db-count=" + this.records);
+          // this.log.debug("sum=" + root.size + " entries=" + entries.length + " remaining=" + this.epcount
+          //                + " db-count=" + this.records);
           // Baum unter Endpunkt speichern
           return this.db.farcEntryModel.collection.insertMany(entries)
               .then((rc) => {
-                this.log.debug("insertMany count: " + rc.insertedCount);
+                this.log.debug("inserted #" + rc.insertedCount + " for " + epPath);
                 return true;
               })
               .catch((exc) => {

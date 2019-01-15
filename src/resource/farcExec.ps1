@@ -131,13 +131,11 @@ if ($type -eq "delete") {
   if ($file) {  # Datei
     $out = & $prog "${source}" "${target}" "${file}" $arg 2>&1
   } else {      # Verzeichnis
-   # if ($type -eq "copy") {  # incl. Unterverzeichnisse
-      $arg += $parm_dircp
-   # }
+    $arg += $parm_dircp
     $out = & $prog "${source}" "${target}" $arg 2>&1
   }
   $result = $LastExitCode
-  $out += "  #*#RC=${result}#*#"
+  #$out += "  #*#RC=${result}#*#"
   if ($result -gt 7) {
     $rc = 1
   } else {

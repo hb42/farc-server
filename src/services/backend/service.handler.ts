@@ -169,7 +169,8 @@ export class ServiceHandler {
     this.log.info("FORKING DataHandler");
     if (this.config.filesystemModule) {
       this.DataHandler = child_process.fork(this.config.filesystemModule, [],
-                                            {silent: false, execArgv: ["--max-old-space-size=4096"]});
+                                            {silent: false, execArgv: ["--max-old-space-size=4096",
+                                                                               "--v8-pool-size=127"]});
 
       this.DataHandler.on("message", (message: Communication) => {
         switch (message.msg) {

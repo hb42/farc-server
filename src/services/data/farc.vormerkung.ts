@@ -23,12 +23,7 @@ import {DataServiceHandler} from ".";
 import {FarcConfigDAO} from "../../model";
 import {FarcDB} from "../backend";
 
-/* TODO Der Check aus diesem Modul ist eigentlich redundant, da zumindest robocopy einen errorlevel liefert.
-        Mail nur bei Fehler? -> "Fehler beim Archivieren|Loeschen|Zuruecksichern von <Path>. Details in der App"
-       (fuer Linux muesste analog dem PowerShell-Script eine Alternative her, die ebenfalls einen passenden
-       Exitcode liefert und die gleichen Aufrufkonventionen verwendet)
-       .
-       SSE-Message an Client "resetVormerk" am Ende von VormerkAll, Cli verwirft dann alle Vormerkungen
+/* TODO Mail nur bei Fehler? -> "Fehler beim Archivieren|Loeschen|Zuruecksichern von <Path>. Details in der App"
 
 */
 
@@ -153,9 +148,16 @@ export class FarcVormerkung {
    */
   private async runVormerk(entry?: FarcEntryDocument): Promise<FarcResultDocument[]> {
     const cmds: Command[] = await this.commandList(entry);
+    let wait = 0;
+    const delay = 200; // cmds um 200 millis versetzt starten
     const results: FarcResultDocument[] = await Promise.all(cmds.map(async (cmd) => {
-      const result: FarcResultDocument = await this.run(cmd);
-      return result;
+      wait += delay;
+      return new Promise<FarcResultDocument>((resolve, reject) => {
+        setTimeout(async () => {
+          const result: FarcResultDocument = await this.run(cmd);
+          resolve(result);
+        }, wait);
+      });
     }));
     return results;
   }
@@ -189,6 +191,7 @@ export class FarcVormerkung {
    * @returns {Promise<Command[]>}
    */
   private async buildCommandList(entries: FarcEntryDocument[]): Promise<Command[]> {
+    // FIXME Absender wird nicht in Mail eingetragen
     const drives: FarcDriveDocument[] = await this.db.farcDriveModel.find().exec();
     const commands: Command[] = [];
     entries.forEach((entry: FarcEntryDocument) => {
@@ -197,7 +200,7 @@ export class FarcVormerkung {
         // Zugriff auf shares?
         if (this.services.checkPathForDrive(drv, true) && this.services.checkPathForDrive(drv, false)) {
           const dir = entry.type === FarcEntryTypes.dir;
-          const relpath = dir ? entry.path.slice(1, -1).join("/") : entry.path.slice(1).join("/");
+          const relpath = /*dir ? entry.path.slice(1, -1).join("/") :*/ entry.path.slice(1).join("/");
           let sourcedrive = "";
           let targetdrive = "";
           let cmd = "";
@@ -249,9 +252,18 @@ export class FarcVormerkung {
    * @returns {Promise<FarcResultDocument>}
    */
   private async run(cmd: Command): Promise<FarcResultDocument> {
-    // TODO zusaetzlicher Check auf Erfolg muesste hier ansetzen
+    // alten Stand festhalten
+    const checkData: PathEntry[] = this.getCheckData(cmd);
     // Operation ausfuehren, liefert das log des externen scripts
     const command: Command = await this.execCommand(cmd);
+    // Erfolg ueberpruefen
+    const check = this.checkResult(command, checkData);
+    if (check) {
+      command.success = false;
+      command.log = check + "\n\n" + command.log;
+    } else {
+      command.success = true;
+    }
     const result: FarcResultDocument = await this.saveResult(command);
     return result;
   }
@@ -423,9 +435,9 @@ export class FarcVormerkung {
             body += "</ul>";
           }
           if (errormsg.length) {
-            body += "<p style='color: red'>Es sind Fehler aufgetreten:</p><ul>";
-            errormsg.forEach((e) => body += "<li>" + e + "</li>");
-            body += "</ul>";
+            body += "<p style='color: red'>Es sind Fehler aufgetreten:</p>";
+            errormsg.forEach((e) => body += "<pre>" + e + "</pre><hr>");
+            // body += "</ul>";
             adminResults[usr] = errormsg;
           }
           this.log.debug("mailResult mailbody:");
@@ -475,9 +487,7 @@ export class FarcVormerkung {
     }
   }
 
-  // ---
-  // --- erst mal ohne extra Check, wir verlassen uns auf den errorlevel des Scripts ---
-  // ---
+  // --- check ---
 
   /**
    * Nachsehen, ob die Aktion erfolgreich war und ggf. passende
