@@ -36,7 +36,7 @@
   "dependencies": {
     "@hb42/lib-common": "https://github.com/hb42/lib-common/releases/download/v1.0.1/hb42-lib-common-1.0.1.tgz",
     "@hb42/lib-farc": "https://github.com/hb42/lib-farc/releases/download/v1.0.3/hb42-lib-farc-1.0.3.tgz",
-    "@hb42/lib-server": "https://github.com/hb42/lib-server/releases/download/v1.0.0/hb42-lib-server-1.0.0.tgz",
+    "@hb42/lib-server": "https://github.com/hb42/lib-server/releases/download/v1.0.1/hb42-lib-server-1.0.1.tgz",
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",
     "cookie-parser": "^1.4.3",
@@ -49,9 +49,9 @@
     "ldapjs": "^1.0.2",
     "log4js": "^3.0.0",
     "mime": "^2.4.0",
-    "mongoose": "^5.4.3",
+    "mongoose": "^5.4.4",
     "nodemailer": "^5.1.1",
-    "reflect-metadata": "^0.1.12",
+    "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
     "serve-favicon": "^2.5.0"
   },
