@@ -349,6 +349,7 @@ export class FarcVormerkung {
                                                           processDate: new Date().getTime(),
                                                           success    : cmd.success,
                                                           log        : cmd.log,
+                                                          size       : cmd.entrydocument.size,
                                                         });
     } catch (rErr) {
       this.log.info("error creating ResultEntry " + rErr);

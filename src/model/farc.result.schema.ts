@@ -19,4 +19,5 @@ export let farcResultSchema = new Schema ({
                                             processDate  : Number,    // Verarbeitung millis
                                             success      : Boolean,
                                             log          : String,  // log|error des scripts
+                                            size         : Number, // Datei-/Verzeichnis-Groesse
                                          });
