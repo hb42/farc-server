@@ -450,12 +450,12 @@ export class FarcVormerkung {
         this.log.error("Fehler beim Lesen des Benutzers fuer Vormerkungs-Ergebnisse User=" + usr + ", " + e.message);
       }
     });
-    if (adminResults) {
+    if (Object.keys(adminResults).length > 0) {
       let body = "<p>Bei der Vormerkungs-Verarbeitung sind im Datei-Archiv Fehler aufgetreten:</p>";
       Object.keys(adminResults).forEach((usr) => {
-        body += "<p>Benutzer " + usr + ":</p><ul>";
-        adminResults[usr].forEach((err: string) => body += "<li>" + err + "</li>");
-        body += "</ul>";
+        body += "<p>Benutzer " + usr + ":</p>";
+        adminResults[usr].forEach((err: string) => body += "<pre>" + err + "</pre><hr>");
+        body += "<p></p>";
       });
       const admMail = await this.configDAO.findConfig(confADMINMAIL);
       if (admMail) {

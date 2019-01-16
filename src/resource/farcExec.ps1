@@ -89,7 +89,7 @@ You can use this in a batch file to report anomalies, as follows:
 
   Hier verwendete Parameter
 
-    /r:5 /w:1 max. 5 Wiederholungen mit Verzoegerung 1sec
+    /r:10 /w:1 max. 10 Wiederholungen mit Verzoegerung 1sec
     /np keinen Fortschritt protokollieren
     Kopieren + Verschieben:
     /e mit Unterverzeichnissen incl. leerer
@@ -120,7 +120,7 @@ if ($type -eq "delete") {
 # 
 } else {
   $prog = "robocopy"
-  $parm_std = @("/r:5", "/w:1", "/np")
+  $parm_std = @("/r:10", "/w:1", "/np")
   $parm_dircp = @("/e")
   $parm_mv = @("/move")
 

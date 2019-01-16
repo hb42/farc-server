@@ -4,7 +4,7 @@
 
 import {
   FarcConfig,
-  FarcConfigDocument,
+  FarcConfigDocument, getConfigValue, setConfigValue,
 } from "@hb42/lib-farc";
 import { LoggerService } from "@hb42/lib-server";
 
@@ -26,7 +26,7 @@ export class FarcConfigDAO {
   public findConfig(confName: string): Promise<any> {
     return this.findConf(confName).then((conf) => {
       if (conf) {
-        return conf.value;
+        return getConfigValue(conf.value);
       } else {
         return null;
       }
@@ -34,12 +34,13 @@ export class FarcConfigDAO {
   }
 
   public updateConfig(confName: string, newValue: any): Promise<FarcConfigDocument> {
+    const newval = setConfigValue(newValue);
     return this.findConf(confName).then((val: FarcConfigDocument) => {
       if (val) {
-        val.value = newValue;
+        val.value = newval;
         return val.save();
       } else {
-        return this.create({name: confName, value: newValue});
+        return this.create({name: confName, value: newval});
       }
     });
   }
@@ -49,6 +50,7 @@ export class FarcConfigDAO {
   }
 
   public create(conf: FarcConfig): Promise<FarcConfigDocument> {
+    conf.value = setConfigValue(conf.value);
     return this.db.farcConfigModel.create(conf);
   }
 
