@@ -191,7 +191,6 @@ export class FarcVormerkung {
    * @returns {Promise<Command[]>}
    */
   private async buildCommandList(entries: FarcEntryDocument[]): Promise<Command[]> {
-    // FIXME Absender wird nicht in Mail eingetragen
     const drives: FarcDriveDocument[] = await this.db.farcDriveModel.find().exec();
     const commands: Command[] = [];
     entries.forEach((entry: FarcEntryDocument) => {
@@ -389,13 +388,12 @@ export class FarcVormerkung {
     });
 
     this.log.debug("mailResult userResults");
-    Object.keys(userResults).forEach(async (usr) => {
+    Promise.all(Object.keys(userResults).map(async (usr) => {
       this.log.debug("mailResult foreach user: " + usr);
       // this.db.farcUserModel.findOne({uid: usr}).exec().then((user: FarcUserDocument) => {
       try {
         const user: FarcUserDocument | null = await this.db.farcUserModel.findOne({uid: usr}).exec();
         if (user) {
-          this.log.debug("mailResult user from db: " + user.name);
           const moved: string[] = [];
           const copied: string[] = [];
           const deleted: string[] = [];
@@ -438,11 +436,9 @@ export class FarcVormerkung {
           if (errormsg.length) {
             body += "<p style='color: red'>Es sind Fehler aufgetreten:</p>";
             errormsg.forEach((e) => body += "<pre>" + e + "</pre><hr>");
-            // body += "</ul>";
+            // Fehler auch an admin
             adminResults[usr] = errormsg;
           }
-          this.log.debug("mailResult mailbody:");
-          this.log.debug(body);
           this.services.mailer.sendStatusMail(sender, user.mail, body);
         } else { // user is null
           this.log.error("Vormerkungs-Ergebnis fuer unbekannten Benutzer: " + usr);
@@ -450,21 +446,23 @@ export class FarcVormerkung {
       } catch (e) {
         this.log.error("Fehler beim Lesen des Benutzers fuer Vormerkungs-Ergebnisse User=" + usr + ", " + e.message);
       }
-    });
-    if (Object.keys(adminResults).length > 0) {
-      let body = "<p>Bei der Vormerkungs-Verarbeitung sind im Datei-Archiv Fehler aufgetreten:</p>";
-      Object.keys(adminResults).forEach((usr) => {
-        body += "<p>Benutzer " + usr + ":</p>";
-        adminResults[usr].forEach((err: string) => body += "<pre>" + err + "</pre><hr>");
-        body += "<p></p>";
-      });
-      const admMail = await this.configDAO.findConfig(confADMINMAIL);
-      if (admMail) {
-        this.services.mailer.sendStatusMail(sender, admMail, body);
-      } else {
-        this.log.error("Fehler: Konnte Vormerk-Fehler nicht an Admin mailen - keine Admin-E-Mail konfiguriert.");
+    })).then(async (a) => {
+      if (Object.keys(adminResults).length > 0) {
+        let body = "<p>Bei der Vormerkungs-Verarbeitung sind im Datei-Archiv Fehler aufgetreten:</p>";
+        Object.keys(adminResults).forEach((usr) => {
+          body += "<p>Benutzer " + usr + ":</p>";
+          adminResults[usr].forEach((err: string) => body += "<pre>" + err + "</pre><hr>");
+          body += "<p></p>";
+        });
+        const admMail = await this.configDAO.findConfig(confADMINMAIL);
+        if (admMail) {
+          this.services.mailer.sendStatusMail(sender, admMail, body);
+        } else {
+          this.log.error("Fehler: Konnte Vormerk-Fehler nicht an Admin mailen - keine Admin-E-Mail konfiguriert.");
+        }
       }
-    }
+
+    });
   }
 
   /**
