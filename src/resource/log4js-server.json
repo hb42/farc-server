@@ -1,10 +1,9 @@
 {
   "appenders": {
     "everything": {
-      "type": "file",
+      "type": "dateFile",
       "filename": "../log/server.log",
-      "maxLogSize": 2000000,
-      "backups": 5,
+      "backups": 6,
       "keepFileExt": true,
       "layout": {
         "type": "pattern",
