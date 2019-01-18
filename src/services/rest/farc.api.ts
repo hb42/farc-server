@@ -182,25 +182,7 @@ export class FarcAPI implements RestApi {
             req["confName"] = "USER_" + this.getSessionData(req).uid;
           }
           if (req["confName"] === confPACK) {
-            const pack = JSON.parse(fs.readFileSync("./package.json", "utf8"));
-            let githash = "";
-            try {
-              githash = fs.readFileSync("./resource/git.ver", "utf8");
-              githash = githash.replace(/\n/, "").replace(/\r/, "");
-            } catch (e) {
-              // noop
-            }
-            // Ueberfluessiges rauswerfen, die Anwendung bekommt Version, Author, etc.
-            delete pack.scripts;
-            delete pack.dependencies;
-            delete pack.devDependencies;
-            delete pack.repository;
-            delete pack.publishConfig;
-            pack["githash"] = githash;
-            pack["versions"] = [ os.type() + " " + os.release(),
-                                "node.js " + process.versions.node,
-                                "MongoDB " + this.db.mongo.mongodbVersion];
-            res.json(pack);
+            res.json(this.services.versions);
           } else {
             next();
           }

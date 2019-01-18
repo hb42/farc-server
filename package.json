@@ -10,8 +10,8 @@
   "main": "server.js",
   "scripts": {
     "build:prep": "npm --no-git-tag-version version prerelease",
-    "gittag": "c:\\programme\\git\\bin\\git describe --tags --long --abbrev=8 > ./dist/resource/git.ver",
-    "gittagx": "git describe --tags --long --abbrev=8 > ./dist/resource/git.ver",
+    "gittag": "git log --pretty=format:\"commit %h %ci\" -n 1 > .\\dist\\resource\\git.ver",
+    "gittagx": "git log --pretty=format:'commit %h %ci' -n 1 > ./dist/resource/git.ver",
     "clean:dist": "./node_modules/.bin/rimraf dist",
     "copy:resource": "./node_modules/.bin/copyfiles -u 1 src/resource/* dist",
     "copy:package": "./node_modules/.bin/copyfiles package.json dist",

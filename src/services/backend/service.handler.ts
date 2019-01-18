@@ -10,6 +10,7 @@
 
 import { checkCronTime, confCRON, confEXECVORM, confREADTREE, getConfigValue, sseNEWVORM } from "@hb42/lib-farc";
 import * as child_process from "child_process";
+import * as fs from "fs";
 import * as os from "os";
 
 import { LoggerService, Webserver } from "@hb42/lib-server";
@@ -34,6 +35,11 @@ export class ServiceHandler {
   private DataHandler: child_process.ChildProcess;
   public get DATA(): child_process.ChildProcess {
     return this.DataHandler;
+  }
+
+  private package: any;
+  public get versions(): any {
+    return this.package;
   }
 
   // configMode: jeder User hat Admin-Rechte (fuer die Ersteinrichtung)
@@ -73,6 +79,8 @@ export class ServiceHandler {
       this.configmode = true;
       this.log.warn("*** ACHTUNG: Programm befindet sich im Konfigurations-Modus, ALLE User haben Admin-Rechte! ***");
     }
+
+    this.getVersion();
 
     this.cron = new Cron();
     this.configDAO = new FarcConfigDAO(this.db);
@@ -188,6 +196,32 @@ export class ServiceHandler {
     } else {
       throw new Error("FEHLER: config.filesystemModule nicht definiert - kein Filesystem-Handling moeglich!");
     }
+  }
+
+  private getVersion() {
+    this.package = {};
+    let githash = "";
+    try {
+      this.package = JSON.parse(fs.readFileSync("./package.json", "utf8"));
+    } catch (e) {
+      this.log.error("konnte package.json nicht lesen!");
+    }
+    try {
+      githash = fs.readFileSync("./resource/git.ver", "utf8");
+      githash = githash.replace(/\n/, "").replace(/\r/, "");
+    } catch (e) {
+      this.log.error("konnte git.ver nicht lesen!");
+    }
+    // Ueberfluessiges rauswerfen, die Anwendung bekommt Version, Author, etc.
+    delete this.package.scripts;
+    delete this.package.dependencies;
+    delete this.package.devDependencies;
+    delete this.package.repository;
+    delete this.package.publishConfig;
+    this.package["githash"] = githash;
+    this.package["versions"] = [ os.type() + " " + os.release(),
+      "node.js " + process.versions.node,
+      "MongoDB " + this.db.mongo.mongodbVersion];
   }
 
 }
