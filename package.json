@@ -3,7 +3,7 @@
   "productname": "farc-server",
   "displayname": "Datei-Archiv-Server",
   "description": "Auslagern und Zurücksichern für den FI-Filer (Server-Teil)",
-  "version": "1.0.0-beta.13",
+  "version": "1.0.0-rc.0",
   "copyright": "Copyright (c) 2018-2019 Hartmut Bauer",
   "author": "hb",
   "license": "MIT",
@@ -38,7 +38,7 @@
   "dependencies": {
     "@hb42/lib-common": "https://github.com/hb42/lib-common/releases/download/v1.0.1/hb42-lib-common-1.0.1.tgz",
     "@hb42/lib-farc": "https://github.com/hb42/lib-farc/releases/download/v1.0.4/hb42-lib-farc-1.0.4.tgz",
-    "@hb42/lib-server": "https://github.com/hb42/lib-server/releases/download/v1.0.1/hb42-lib-server-1.0.1.tgz",
+    "@hb42/lib-server": "https://github.com/hb42/lib-server/releases/download/v1.0.2/hb42-lib-server-1.0.2.tgz",
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",
     "cookie-parser": "^1.4.3",

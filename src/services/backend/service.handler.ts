@@ -80,7 +80,10 @@ export class ServiceHandler {
       this.log.warn("*** ACHTUNG: Programm befindet sich im Konfigurations-Modus, ALLE User haben Admin-Rechte! ***");
     }
 
-    this.getVersion();
+    this.getVersion().then(() => {
+      this.log.info(this.versions.displayname + " " + this.versions.version + " " + this.versions.copyright +
+                     " (" + this.versions.githash + ")");
+    });
 
     this.cron = new Cron();
     this.configDAO = new FarcConfigDAO(this.db);
@@ -198,7 +201,7 @@ export class ServiceHandler {
     }
   }
 
-  private getVersion() {
+  private async getVersion() {
     this.package = {};
     let githash = "";
     try {
@@ -219,9 +222,11 @@ export class ServiceHandler {
     delete this.package.repository;
     delete this.package.publishConfig;
     this.package["githash"] = githash;
-    this.package["versions"] = [ os.type() + " " + os.release(),
+    this.package["versions"] = [
+      os.type() + " " + os.release(),
       "node.js " + process.versions.node,
-      "MongoDB " + this.db.mongo.mongodbVersion];
+      "MongoDB " + await this.db.mongo.mongodbVersion,
+    ];
   }
 
 }

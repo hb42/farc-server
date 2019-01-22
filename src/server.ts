@@ -49,8 +49,6 @@ const config = JSON.parse(fs.readFileSync(configFile, "utf8"));
 
 // Services und config-data
 const services = new ServiceHandler(config);
-log.info(services.versions.displayname + " " + services.versions.version + " " + services.versions.copyright +
-         " (" + services.versions.githash + ")");
 
 // FARC-Server
 const farcserver = new Webserver(config.restAPIport, "farc", new FarcUserCheck(services, config.jwtTimeoutSec));
