@@ -564,8 +564,8 @@ export class FarcReadEps {
     const users: FarcUser[] = [];
     obj.forEach((u: any) => {
       // nur "normale" User speichern
-      // TODO regex evtl. in config
-      if (u.cn.search(/^[aAsS]077\d{4}$/) >= 0) {
+      // TODO regex evtl. in config (evtl. ^[aAsS]077\d{4}$ -> nur numerisch)
+      if (u.cn.search(/^[aAsS]077.{4}$/) >= 0) {
         const user: FarcUser = {
           uid    : u.cn.toUpperCase(),
           name   : u.sn,
