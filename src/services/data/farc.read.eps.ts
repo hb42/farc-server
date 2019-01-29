@@ -573,7 +573,7 @@ export class FarcReadEps {
           mail   : u.mail,
           roles  : u.memberOf ? [...u.memberOf] : [],  // sicherstellen, dass das immer ein Array ist
         };
-        validusers.push(u.cn);
+        validusers.push(user.uid);
         users.push(user);
         this.saveUser(user);
       } else {
