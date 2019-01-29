@@ -157,8 +157,9 @@ export class DataServiceHandler {
         case ipcEXEC:
           // message.payload -> entrid
           this.vormerkHandler.runVormerkSingle(message.payload).then((rc) => {
+            // entryid und Ergebnis zurueckschicken
             // @ts-ignore
-            process.send({msg: ipcEXECRES, payload: rc});
+            process.send({msg: ipcEXECRES, payload: {id: message.payload, res: rc}});
           });
           break;
         case ipcREADALL:

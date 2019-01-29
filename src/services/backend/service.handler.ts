@@ -117,12 +117,13 @@ export class ServiceHandler {
   public execVormerk(entryid: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       this.DataHandler.send({msg: ipcEXEC, payload: entryid});
+      // Wenn mehrere Vormerkungen schnell hintereinander gestartet werden,
+      // keonnen mehrere Rueckmeldungen hier landen. Deshalb ist der Check
+      // auf die entryid notwendig, um die passende Antwort auszufiltern.
       this.DataHandler.on("message", (message: Communication) => {
-        switch (message.msg) {
-          case ipcEXECRES:
-            this.log.info("execVormerk(): result " + message.payload);
-            resolve(message.payload);
-            break;
+        if (message.msg === ipcEXECRES && message.payload.id === entryid) {
+          this.log.info("execVormerk(): result " + message.payload.res);
+          resolve(message.payload.res);
         }
       });
     });
