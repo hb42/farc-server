@@ -1,10 +1,4 @@
-/**
- * Created by hb on 29.05.16.
- */
-
 import * as express from "express";
-import * as fs from "fs";
-import * as os from "os";
 
 import {
   apiCHILDREN, apiCONFIG, apiDRIVE, apiDRIVES, apiEPS, apiEXECVORM, apiFILES, apiOE,
@@ -58,7 +52,6 @@ export class FarcAPI implements RestApi {
     this.buildTree();
     this.configDAO = new FarcConfigDAO(services.db);
     this.log.debug("c'tor FarcAPI");
-    // this.vormerkHandler = services.vormerkHandler;
 
     this.dataEventHandler = services.dataEventHandler;
     if (this.dataEventHandler.listenerCount(this.dataEventHandler.evtReadFsReady) > 0) {

@@ -1,7 +1,3 @@
-/**
- * Created by hb on 25.05.16.
- */
-
 import {
     FarcEndpunktDocument,
 } from "@hb42/lib-farc";

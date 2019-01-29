@@ -26,7 +26,7 @@ export class Cron {
 
   constructor() {
     this.time = "0 0 0 * * *";
-    this.cmd = () => { /* nop */ };
+    this.cmd = () => { /* noop */ };
   }
 
   /**

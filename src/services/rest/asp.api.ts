@@ -1,7 +1,3 @@
-/**
- * Created by hb on 29.05.16.
- */
-
 import * as express from "express";
 import * as request from "request";
 
@@ -25,13 +21,11 @@ export class AspAPI implements RestApi {
     return "/asp";
   }
   private fakeUser: string;
-  // { app1: { server: "http://server:port", url: "/ntlmlogin"}, }
   private services: any;
 
   private log = LoggerService.get("farc-servcer.services.rest.AspAPI");
 
   constructor() {
-    // this.initRoutes(router);
   }
 
   public setUser(usr: string) {
@@ -51,14 +45,13 @@ export class AspAPI implements RestApi {
           this.log.info("asp.api: app=" + app);
           const uid = this.fakeUser;
 
-          const authUrl = this.services[app].server + authURL; // + "?uid=" + uid;
-          const result: any = {}; // = "let LOGIN_TOKEN="123456";";
+          const authUrl = this.services[app].server + authURL;
+          const result: any = {};
           result["type"] = "NTLM";
           result["uid"] = uid;
 
-          request({ url: authUrl, // URL to hit
+          request({ url: authUrl,
                     method: "POST",
-                    // Lets post the following key/values as form
                     json: result,
                   }, (error, response, body) => {
             if (error) {

@@ -1,8 +1,4 @@
 /**
- * Created by hb on 10.04.17.
- */
-
-/**
  * Userdaten im Session-Objekt -> req["session"]["data"]
  */
 export interface FarcSession {

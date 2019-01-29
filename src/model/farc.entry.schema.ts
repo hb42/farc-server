@@ -1,7 +1,3 @@
-/**
- * Created by hb on 03.09.16.
- */
-
 import {
     Schema,
 } from "mongoose";

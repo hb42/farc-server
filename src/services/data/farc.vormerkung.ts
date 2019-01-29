@@ -1,7 +1,3 @@
-/**
- * Created by hb on 11.06.17.
- */
-
 import {
   confADMINMAIL,
   confMAILFROM,
@@ -22,10 +18,6 @@ import * as fs from "fs";
 import {DataServiceHandler} from ".";
 import {FarcConfigDAO} from "../../model";
 import {FarcDB} from "../backend";
-
-/* TODO Mail nur bei Fehler? -> "Fehler beim Archivieren|Loeschen|Zuruecksichern von <Path>. Details in der App"
-
-*/
 
 interface Command {
   drive: FarcDriveDocument;
@@ -177,11 +169,6 @@ export class FarcVormerkung {
       commands = await this.buildCommandList(selected);
     }
     return commands;
-  }
-  // TODO nur fuer Tests: holt Vormerkungen aus Datei
-  private fakeCommandList(): Promise<Command[]> {
-    const entries: FarcEntryDocument[] = JSON.parse(fs.readFileSync("./resource/testentries.json", "utf8"));
-    return this.buildCommandList(entries);
   }
 
   /**
@@ -353,7 +340,6 @@ export class FarcVormerkung {
     } catch (rErr) {
       this.log.info("error creating ResultEntry " + rErr);
     }
-    // TODO Vormerk immer zuruecksetzen, auch bei Fehler?
     cmd.entrydocument.selected = FarcSelectType.none;
     try {
       const docsave: FarcEntryDocument = await cmd.entrydocument.save();
@@ -379,7 +365,6 @@ export class FarcVormerkung {
     const userResults: any = {};
     // Fehler fuer Mail an admin sammeln {"uid": string[], ...}
     const adminResults: any = {};
-    // const farcresults: FarcResultDocument[] = await results;
     results.forEach((res) => {
       if (!userResults[res.selectUid]) {
         userResults[res.selectUid] = [];
@@ -390,7 +375,6 @@ export class FarcVormerkung {
     this.log.debug("mailResult userResults");
     Promise.all(Object.keys(userResults).map(async (usr) => {
       this.log.debug("mailResult foreach user: " + usr);
-      // this.db.farcUserModel.findOne({uid: usr}).exec().then((user: FarcUserDocument) => {
       try {
         const user: FarcUserDocument | null = await this.db.farcUserModel.findOne({uid: usr}).exec();
         if (user) {
@@ -439,7 +423,7 @@ export class FarcVormerkung {
             // Fehler auch an admin
             adminResults[usr] = errormsg;
           }
-          this.services.mailer.sendStatusMail(sender, user.mail, body);
+          this.services.mailer.sendStatusMail(sender, user.mail, body, "Datei-Archiv-Status");
         } else { // user is null
           this.log.error("Vormerkungs-Ergebnis fuer unbekannten Benutzer: " + usr);
         }
@@ -456,7 +440,7 @@ export class FarcVormerkung {
         });
         const admMail = await this.configDAO.findConfig(confADMINMAIL);
         if (admMail) {
-          this.services.mailer.sendStatusMail(sender, admMail, body);
+          this.services.mailer.sendStatusMail(sender, admMail, body, "Datei-Archiv Fehler-Protokoll");
         } else {
           this.log.error("Fehler: Konnte Vormerk-Fehler nicht an Admin mailen - keine Admin-E-Mail konfiguriert.");
         }
@@ -476,8 +460,8 @@ export class FarcVormerkung {
       const days = conf ? getConfigValue(conf) : 90;
       const maxdate = new Date().getTime() - days * 24 * 60 * 60 * 1000;
       const rc = await this.db.farcResultModel.deleteMany({processDate: {$lt: maxdate}}).exec();
-      if (rc) {
-        this.log.debug("Erledige Vormerkungen geloescht: " + rc.length);
+      if (rc.ok) {
+        this.log.debug("Erledige Vormerkungen geloescht: " + rc.n);
       } else {
         this.log.debug("Keine erledigten Vormerkungen gefunden.");
       }

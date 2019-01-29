@@ -1,7 +1,3 @@
-/**
- * Created by hb on 23.10.16.
- */
-
 import * as mongoose from "mongoose";
 
 import {

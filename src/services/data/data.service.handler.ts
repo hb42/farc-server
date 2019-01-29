@@ -139,12 +139,9 @@ export class DataServiceHandler {
 
       if (readall) {  // readall | readfilesystem
         this.log.debug("CRON do read all");
-        // DEBUG EP-Tabelle neu aufbauen
-        // this.db.farcEndpunktModel.remove({}).then(() => { // DEBUG
-          // Daten einlesen
+        // Daten einlesen
         const dataservice = new DataService(this);
         dataservice.readAll();
-        // });  // DEBUG
       } else {
         // @ts-ignore
         process.send({msg: ipcVORMREADY, payload: null});
@@ -165,7 +162,7 @@ export class DataServiceHandler {
         case ipcREADALL:
           readall = true;
           this.log.debug("CRON event readall");
-          this.vormerkHandler.runVormerkAll(); // -> evtVormerkReady  // DEBUG
+          this.vormerkHandler.runVormerkAll(); // -> evtVormerkReady
           break;
         case ipcREADFS:
           this.log.debug("CRON event readfilesystem");
@@ -175,7 +172,7 @@ export class DataServiceHandler {
         case ipcREADVORM:
           this.log.debug("CRON readvormerk");
           readall = false;
-          this.vormerkHandler.runVormerkAll();  // DEBUG
+          this.vormerkHandler.runVormerkAll();
           break;
         default:
           this.log.debug("IPC: unhandled message " + message);

@@ -1,9 +1,3 @@
-/**
- * Created by hb on 16.08.16.
- */
-
-import * as fs from "fs";
-
 import {
   FarcOeDocument,
   FarcUser,
@@ -21,8 +15,6 @@ import {
              (array mit 823 Eintraegen gegen 825 records -> 250 ms)
  */
 
-// TODO evtl. als allgemeine DAO abstrahieren
-
 export class FarcUserDAO {
 
   private db: FarcDB;
@@ -32,30 +24,6 @@ export class FarcUserDAO {
   constructor(private farcdb: FarcDB) {
     this.log.info("c'tor TestSession");
     this.db = farcdb;
-  }
-
-  // {"uid":"S07xxx","name":"xxx","vorname":"xxx","mail":"xxx",
-  //  "roles":["e077guv-zzv-7xxx", ... ]} ,
-  // DEBUG
-  public importFile(file: string) {
-    const config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach((u: any) => {
-      // let usr = new this.model.USER({
-      const usr = new this.db.farcUserModel({
-        uid: u.uid,
-        name: u.name,
-        vorname: u.vorname,
-        mail: u.mail,
-        roles: u.roles,
-      });
-      usr.save()
-          .then((res) => {
-            this.log.info("saved " + u.uid);
-          })
-          .catch((err) => {
-            this.log.error("error saving " + u.uid);
-          });
-      });
   }
 
   public findOne(uid: string): Promise<FarcUserDocument | null> {
@@ -96,18 +64,6 @@ export class FarcUserDAO {
           this.log.error("Kein Home-Verzeichnis fuer Benutzer " + uid);
           return null;
         });
-  }
-
-  // DEBUG
-  public testfile(file: string) {
-    const uids: any[] = [];
-    const config = JSON.parse(fs.readFileSync(file, "utf8"));
-    config.user.forEach((u: any) => {
-      uids.push(u.uid);
-    });
-    uids.pop();
-    uids.pop();
-    return uids;
   }
 
 }

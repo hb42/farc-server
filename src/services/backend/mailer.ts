@@ -1,7 +1,3 @@
-/**
- * Created by hb on 18.06.17.
- */
-
 import {
   createTransport,
   SendMailOptions,
@@ -13,8 +9,6 @@ import { LoggerService } from "@hb42/lib-server";
 import {
   DataServiceHandler,
 } from "../data";
-
-// TODO evtl. abstrahieren in lib-server
 
 export class Mailer {
 
@@ -29,11 +23,11 @@ export class Mailer {
                                        });
   }
 
-  public sendStatusMail(sender: string, recv: string, body: string) {
+  public sendStatusMail(sender: string, recv: string, body: string, subj: string) {
     const mail: SendMailOptions = {
       from: sender,
       to: recv,
-      subject: "Datei-Archiv-Status",
+      subject: subj,
       html: body,
     };
     this.transporter.sendMail(mail, (err, info) => {

@@ -1,7 +1,3 @@
-/**
- * Created by hb on 19.08.16.
- */
-
 export * from "./farc.config.schema";
 export * from "./farc.drive.schema";
 export * from "./farc.endpunkt.schema";

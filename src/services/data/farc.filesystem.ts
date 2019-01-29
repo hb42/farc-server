@@ -1,9 +1,3 @@
-/**
- * Filesystem Zugriffe
- *
- * Created by hb on 04.09.16.
- */
-
 import * as fs from "fs";
 import * as path from "path";
 import * as util from "util";
@@ -18,7 +12,6 @@ import {
   FarcDriveDocument,
   FarcEndpunktDocument,
   FarcEntry,
-  FarcEntryDocument,
   FarcEntryTypes,
   FarcSelectType,
   setConfigValue,
@@ -97,33 +90,6 @@ export class FarcFilesystem {
       });
     });
   }
-
-  // ---- DEBUG ----
-  private getdirentries(key: any) {
-    this.db.farcEntryModel.find({parent: key}).exec().then((res: FarcEntryDocument[]) => {
-      res.forEach((item: FarcEntryDocument) => {
-        if (item.type !== FarcEntryTypes.file) {
-          this.log.info(FarcEntryTypes[item.type]
-                       + " " + item.path.join("/"));
-          this.getdirentries(item.key);
-        }
-      });
-    });
-  }
-
-  private testEps() {
-    this.db.farcEndpunktModel.find().exec()
-        .then((result: FarcEndpunktDocument[]) => {
-          // this.log.info(result);
-          this.log.info("found " + result.length + " EPs");
-          result.sort((a, b) => (a.drive + a.above + a.endpunkt).localeCompare(b.drive + b.above + b.endpunkt));
-          result.forEach((ep) => {
-            // this.log.info("EP " + ep.drive + " " + ep.above + "/" + ep.endpunkt);
-            this.getdirentries(ep._id.toString());
-          });
-        });
-  }
-  // ---- ----
 
   /**
    * Entries loeschen und Liste aus [Lauferk, Endpunkt[]] holen
@@ -256,7 +222,7 @@ export class FarcFilesystem {
           parent   : parent.key,
           key      : "" + this.ID++,
           label    : filename,
-          timestamp: direntry.mtime.getTime(),  // als mili speichern
+          timestamp: direntry.mtime.getTime(),  // als milli speichern
           size     : 0,
           type     : FarcEntryTypes.dir,
           arc      : parent.arc,

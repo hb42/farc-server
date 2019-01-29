@@ -1,7 +1,6 @@
 /**
  * Client-Zugriffe auf Tree erledigen
  *
- * Created by hb on 04.09.16.
  */
 
 import {
@@ -75,18 +74,12 @@ export class FarcTree {
     const drives = (select: any) => this.db.farcDriveModel.find(select);
     const buildTrees = (drvs: FarcDriveDocument[]) => {
       const promises: Array<Promise<FarcTreeNode>> = [];
-      // Promise.all(drvs.map((drv: FarcDriveDocument) => this.makeDriveTree(drv)))
       drvs.forEach((drv: FarcDriveDocument) => {
         promises.push(this.makeDriveTree(drv, false));
         promises.push(this.makeDriveTree(drv, true));
       });
       return Promise.all(promises);
     };
-    // fn chain mit Ramda
-    // const gettree = R.bind( R.pipeP(drives, buildTrees), this ); // IDE zeigt Fehler, typings nicht aktuell/Fehler
-    // return gettree({});
-
-    // chaining ohne Ramda
     return drives({})
         .then((drvs) => buildTrees(drvs))
         .then((tree) => {
@@ -127,13 +120,11 @@ export class FarcTree {
 
     return this.db.farcEndpunktModel.find({drive: drive._id}).lean().exec().then((result) => {
       return Promise.all(result.map((ep: FarcEndpunktDocument) => {
-        // this.log.trace("BUILD: " + drivename + " " + ep.above + "+" + ep.endpunkt)
         let node: FarcTreeNode = driveroot;
         // Pfad ab drive zum EP aufbauen
         const above: string[] = ep.above ? ep.above.split("/") : [];
         above.push(ep.endpunkt);
         above.forEach((dir) => {
-          // this.log.trace("BUILD: " + dir);
           const ch: FarcTreeNode[] = node.children ? node.children.filter((n) => dir === n.label) : [];
           if (ch && ch.length === 1) {
             node = ch[0];
@@ -172,7 +163,6 @@ export class FarcTree {
             node.arc = epEntry.arc;
             node.leaf = epEntry.leaf;
             node.type = FarcEntryTypes[FarcEntryTypes.ep];
-            // if (ep.oe) {
             return this.db.farcOeModel.findById(ep.oe).lean().exec()
                   .then((oe: FarcOeDocument) => {
                     node.oe = oe ? oe.name : this.noOE;
@@ -188,20 +178,10 @@ export class FarcTree {
                                        });
                     }
                   });
-            // } else {  // no OE
-            //   if (!node.arc) {
-            //     node.oe = "";
-            //     this.oelist.push(node);
-            //   }
-            // }
           }
         });
       })).then(() => driveroot);
     });
-  }
-
-  public testQ() {
-    //
   }
 
   public getTree(useroe: string, userid: string, admin: boolean): FarcTreeNode[] {
@@ -270,7 +250,7 @@ export class FarcTree {
    * Vormerkungen speichern
    *
    * @param vor
-   * @returns {Promise<T>}
+   * @returns {Promise<string>}
    */
   public saveVormerkung(vor: FarcTreeNode[]): Promise<string> {
     const result: Array<Promise<string>> = vor.map((v) => {
@@ -311,7 +291,6 @@ export class FarcTree {
    */
   public getResult(uid: string, admin: boolean): Promise<FarcResultDocument[]> {
     const search = admin ? {selected: {$gt: 0} } : {selectUid: uid, selected: {$gt: 0} } ;
-    // TODO muss vermutlich noch verfeinert werden
     return this.db.farcResultModel.find(search).lean().exec().then((entries: FarcResultDocument[]) => {
       return entries;
     });
@@ -324,9 +303,7 @@ export class FarcTree {
    * @param search - Bedingungen
    */
   private getEntriesFor(search: any): Promise<FarcTreeNode[]> {
-    this.log.debug("## start getEntriesFor " + search.parent);
     return this.db.farcEntryModel.find(search).lean().exec().then((entries: FarcEntryDocument[]) => {
-      this.log.debug("## getEntriesFor " + search.parent + " select done");
       return entries.map((entry: FarcEntryDocument) => {
         return {
           entryid:    entry.key,

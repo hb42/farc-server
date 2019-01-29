@@ -1,7 +1,3 @@
-/**
- * Created by hb on 07.08.16.
- */
-
 import {
   FarcOeDocument,
   FarcUserDocument,
@@ -84,8 +80,6 @@ export class FarcUserCheck implements UserCheck {
 
   public getJwtSecret(): string {
     return this.services.config.jwtSecret;
-    // return "QS20oVANByFKI2h0LkCqCL52nWLdbiC0p4pnJF5LaKBHcs1pNRIRyYsPIL6zBTZd7WZhJdudTFOYKDzbbkCwE" +
-    //        "iyeO5x9GWBfFxm68GODUsmXFjGKCQYcpH8t";
   }
 
   public getJwtTimeout(): number {

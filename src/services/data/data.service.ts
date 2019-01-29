@@ -1,7 +1,3 @@
-/**
- * Created by hb on 31.12.16.
- */
-
 import {
   LoggerService,
 } from "@hb42/lib-server";
@@ -16,7 +12,7 @@ import {
 export class DataService {
 
   private log = LoggerService.get("farc-server.services.data.DataService");
-  private dataEventHandler: DataEventEmitter;
+  private readonly dataEventHandler: DataEventEmitter;
 
   constructor(private services: DataServiceHandler) {
     this.dataEventHandler = services.dataEventHandler;
@@ -44,15 +40,8 @@ export class DataService {
       this.readFs();
     });
 
-    // Event wird in FarcApi behandelt
-    // if (this.dataEventHandler.listenerCount(this.dataEventHandler.evtReadFsReady) > 0) {
-    //   this.dataEventHandler.removeAllListeners(this.dataEventHandler.evtReadFsReady);
-    // }
-    // // Verzeichnnisse-Einlesen ist fertig
+    // Event wird in DataServiceHandler behandelt
     // this.dataEventHandler.on(this.dataEventHandler.evtReadFsReady, () => {
-    //   // push info "new tree"
-    //   this.log.debug("event evtReadFsReady");
-    // });
 
     this.log.info("... start reading EPs ...");
     this.readEps();

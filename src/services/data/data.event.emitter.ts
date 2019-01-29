@@ -1,7 +1,3 @@
-/**
- * Created by hb on 31.12.16.
- */
-
 import { EventEmitter } from "events";
 
 export class DataEventEmitter extends EventEmitter {

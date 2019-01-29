@@ -1,7 +1,3 @@
-/**
- * Created by hb on 02.03.17.
- */
-
 export * from "./communication";
 export * from "./data.service.handler";
 export * from "./data.event.emitter";

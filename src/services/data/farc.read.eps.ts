@@ -1,7 +1,6 @@
 /**
  * Endpunkte einlesen
  *
- * Created by hb on 04.03.17.
  */
 
 import * as fs from "fs";
@@ -35,7 +34,6 @@ import {
 } from "../backend";
 
 // TODO Fehler beim Einlesen sammeln und per Mail an Admin senden
-//      ausserdem gibt's hier eine Reihe von Strings die externalisiert werden sollten
 
 export class FarcReadEps {
   // zweite Ebene fuer INST-Endpunkte

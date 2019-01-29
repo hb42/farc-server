@@ -1,7 +1,3 @@
-/**
- * Created by hb on 21.08.16.
- */
-
 import {Client, createClient, SearchOptions} from "ldapjs";
 
 import { LoggerService } from "@hb42/lib-server";
