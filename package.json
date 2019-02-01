@@ -3,7 +3,7 @@
   "productname": "farc-server",
   "displayname": "Datei-Archiv-Server",
   "description": "Auslagern und Zurücksichern für den FI-Filer (Server-Teil)",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "copyright": "Copyright (c) 2018-2019 Hartmut Bauer",
   "author": "hb",
   "license": "MIT",
