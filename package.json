@@ -10,7 +10,7 @@
   "main": "server.js",
   "scripts": {
     "build:prep": "npm --no-git-tag-version version prerelease",
-    "gittag": "git log --pretty=format:'commit %h %ci' -n 1 > ./dist/resource/git.ver",
+    "gittag": "git log -n 1 --pretty=format:\"`git describe --tags --long` %cd\" --date=format:'%d-%m-%Y %H:%M:%S' > ./dist/resource/git.ver",
     "clean:dist": "rimraf dist",
     "copy:resource": "copyfiles -u 1 src/resource/* dist",
     "copy:package": "copyfiles package.json dist",
@@ -49,7 +49,7 @@
     "ldapjs": "^1.0.2",
     "log4js": "^4.0.0",
     "mime": "^2.4.0",
-    "mongoose": "^5.4.8",
+    "mongoose": "^5.4.9",
     "nodemailer": "^5.1.1",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.0",
