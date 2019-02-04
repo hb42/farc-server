@@ -10,7 +10,7 @@
   "main": "server.js",
   "scripts": {
     "build:prep": "npm --no-git-tag-version version prerelease",
-    "gittag": "git log -n 1 --pretty=format:\"`git describe --tags --long` %cd\" --date=format:'%d-%m-%Y %H:%M:%S' > ./dist/resource/git.ver",
+    "gittag": "git log -n 1 --pretty=format:\"$(git describe --tags --long) (%cd)\" --date=format:'%d.%m.%Y %H:%M:%S' > ./dist/resource/git.ver",
     "clean:dist": "rimraf dist",
     "copy:resource": "copyfiles -u 1 src/resource/* dist",
     "copy:package": "copyfiles package.json dist",
