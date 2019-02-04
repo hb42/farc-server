@@ -33,10 +33,10 @@ import {
  Mehr Threads fuer fs und mongo(?) bereitstellen (default 4)
  -> http://stackoverflow.com/questions/22644328/when-is-the-thread-pool-used
  (alt.(?): --v8-pool-size=)
- Sollte hier ueberfluessig sein, die aufwendigen Operationen laufen im extra
- Modul, das per fork() im eigenen Thread gestartet wird.
+ Die aufwendigen Operationen laufen im extra Modul, das per fork() im
+ eigenen Thread gestartet wird. Hier sicherheitshalber auf 32 anheben.
  */
-// process.env.UV_THREADPOOL_SIZE = "127";
+process.env.UV_THREADPOOL_SIZE = "32";
 
 // Standard-Logfile
 LoggerService.init("resource/log4js-server.json");
