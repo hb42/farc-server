@@ -9,10 +9,10 @@ import {
   FarcResultDocument,
   FarcUserDocument,
 } from "@hb42/lib-farc";
+
 import {
   MongoDB,
-} from "@hb42/lib-server";
-
+} from ".";
 import {
   farcConfigSchema,
   farcDriveSchema,

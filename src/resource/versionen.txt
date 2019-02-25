@@ -1,3 +1,7 @@
+1.0.1           25.02.2019
+                - MongoDB-/Mongoose-Abhaengigkeit aus lib-server in die Anwendung
+                  verschoben.
+
 1.0.0           04.02.2019
                 - Kleinigkeiten an package.json
                 - max. 32 threads fuer main-Prozess
